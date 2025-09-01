@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>All Bookings - Nexus Gaming Cafe</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+  </head>
+  <body class="bg-gray-900 text-white">
+    <div class="container mx-auto px-6 py-12">
+      <h1 class="text-3xl font-bold text-center mb-8 gradient-text">
+        🎮 All Bookings
+      </h1>
+
+      <% if (bookings.length === 0) { %>
+      <p class="text-center text-gray-400">No bookings yet.</p>
+      <% } else { %>
+      <div class="grid gap-6 md:grid-cols-2">
+        <% bookings.forEach(booking => { %>
+        <div class="bg-gray-800 p-6 rounded-xl shadow-lg hover-glow">
+          <h2 class="text-xl font-semibold text-purple-400 mb-2">
+            <i class="fa-solid fa-user"></i> <%= booking.name %>
+          </h2>
+          <p>
+            <i class="fa-solid fa-envelope"></i>
+            <strong>Email:</strong> <%= booking.email %>
+          </p>
+          <p>
+            <i class="fa-solid fa-phone"></i>
+            <strong>Phone:</strong> <%= booking.phone %>
+          </p>
+          <p>
+            <i class="fa-solid fa-users"></i>
+            <strong>Members:</strong> <%= booking.membersCount %>
+          </p>
+
+          <% if (booking.membersName.length > 0) { %>
+          <p class="mt-2">
+            <i class="fa-solid fa-user-group"></i>
+            <strong>Names:</strong> <%= booking.membersName.join(", ") %>
+          </p>
+          <% } %>
+
+          <p class="mt-2">
+            <i class="fa-solid fa-computer"></i>
+            <strong>Type:</strong> <%= booking.bookingType %>
+          </p>
+
+          <p class="mt-2">
+            <i class="fa-regular fa-clock"></i>
+            <strong>Time:</strong>
+            <%= booking.bookingTime.start %> → <%= booking.bookingTime.end %>
+          </p>
+        </div>
+        <% }) %>
+      </div>
+      <% } %>
+
+      <div class="text-center mt-8">
+        <a
+          href="/booking"
+          class="bg-purple-600 hover:bg-purple-700 px-8 py-3 rounded-lg text-lg font-semibold transition-all transform hover:scale-105 hover-glow"
+        >
+          ➕ New Booking
+        </a>
+      </div>
+      <div class="text-center mt-6">
+        <a
+          href="/"
+          class="bg-gray-700 hover:bg-gray-600 px-6 py-2 rounded-lg text-white font-semibold transition-all transform hover:scale-105 shadow-md inline-block"
+        >
+          🏠 Go Home
+        </a>
+      </div>
+    </div>
+  </body>
+</html>

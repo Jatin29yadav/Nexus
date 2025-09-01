@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nexus Gaming Cafe - Tournament Registration</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=K2D:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        font-family: "K2D", sans-serif;
+      }
+    </style>
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="bg-gray-900 text-white">
+    <nav
+      class="navbar fixed w-full z-50 transition-all duration-300 bg-gray-900/80 backdrop-blur-sm"
+    >
+      <div class="container mx-auto px-6 py-4">
+        <div class="flex justify-between items-center">
+          <a
+            href="/"
+            class="text-2xl font-bold gradient-text hover:scale-105 transition-transform"
+            >NEXUS</a
+          >
+          <div class="hidden md:flex space-x-8">
+            <a href="/" class="nav-link">Home</a>
+            <a href="/register" class="nav-link">Register</a>
+            <a href="/login" class="nav-link">Login</a>
+            <a href="/tournament/list" class="nav-link">Tournaments</a>
+            <a href="/gallery" class="nav-link">Gallery</a>
+            <a href="/contact" class="nav-link">Contact</a>
+          </div>
+          <button
+            id="menu-btn"
+            class="md:hidden text-xl hover:text-purple-500 transition-colors"
+          >
+            <i class="fas fa-bars"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mobile Menu -->
+      <div
+        class="md:hidden hidden absolute w-full bg-gray-800/95 backdrop-blur-sm"
+        id="mobile-menu"
+      >
+        <div class="px-6 py-4 flex flex-col space-y-4">
+          <a href="/" class="nav-link">Home</a>
+          <a href="/register" class="nav-link">Register</a>
+          <a href="/login" class="nav-link">Login</a>
+          <a href="/tournament/list" class="nav-link">Tournaments</a>
+          <a href="/gallery" class="nav-link">Gallery</a>
+          <a href="/contact" class="nav-link">Contact</a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- ✅ Tournament Registration -->
+    <section class="py-32 bg-gray-900">
+      <div
+        class="container mx-auto px-6 max-w-3xl bg-gray-800 p-8 rounded-xl shadow-lg hover-glow"
+        data-aos="fade-up"
+      >
+        <!-- Tournament Info -->
+        <div class="text-center mb-8">
+          <img
+            src="https://images.wallpapersden.com/image/download/iso-valorant-x-overwatch-2-style_bmZsbWiUmZqaraWkpJRobWllrWdma2U.jpg"
+            alt="Tournament Banner"
+            class="w-full h-64 object-cover rounded-lg mb-6"
+          />
+          <h2 class="text-3xl font-bold gradient-text">
+            Valorant Championship
+          </h2>
+          <p class="text-gray-400 mt-2">
+            💰 Prize Pool:
+            <span class="text-purple-400 font-semibold">$5,000</span>
+          </p>
+          <p class="text-gray-400">📅 June 15, 2023 | 🕑 2:00 PM EST</p>
+        </div>
+
+        <!-- Registration Form -->
+        <form method="post" action="/tournament" class="space-y-6">
+          <div>
+            <label class="block text-gray-300 mb-2 font-semibold"
+              >Team Name</label
+            >
+            <input
+              type="text"
+              name="teamName"
+              required
+              class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
+              placeholder="Enter your team name"
+            />
+          </div>
+          <div>
+            <label class="block text-gray-300 mb-2 font-semibold"
+              >Captain Name</label
+            >
+            <input
+              type="text"
+              name="captainName"
+              required
+              class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
+              placeholder="Team captain's name"
+            />
+          </div>
+          <div>
+            <label class="block text-gray-300 mb-2 font-semibold">Email</label>
+            <input
+              type="email"
+              name="captainEmail"
+              required
+              class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
+              placeholder="Enter your email"
+            />
+          </div>
+          <div>
+            <label class="block text-gray-300 mb-2 font-semibold">Phone</label>
+            <input
+              type="tel"
+              name="captainPhone"
+              required
+              class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
+              placeholder="Enter your phone number"
+            />
+          </div>
+          <div>
+            <label class="block text-gray-300 mb-2"
+              >Team Members (comma separated)</label
+            >
+            <input
+              type="text"
+              name="members"
+              placeholder="e.g. Jason, Jatin, Rohit"
+              class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
+            />
+          </div>
+
+          <!-- Submit -->
+          <button
+            type="submit"
+            class="w-full bg-purple-600 hover:bg-purple-700 px-8 py-3 rounded-lg text-lg font-semibold transition-all transform hover:scale-105 hover-glow"
+          >
+            Register Team
+          </button>
+        </form>
+        <div class="text-center mt-6">
+          <a
+            href="/"
+            class="bg-gray-700 hover:bg-gray-600 px-6 py-2 rounded-lg text-white font-semibold transition-all transform hover:scale-105 shadow-md inline-block"
+          >
+            🏠 Go Home
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ✅ Footer -->
+    <footer class="bg-gray-800 py-6 text-center text-gray-400">
+      <p>
+        © <%= new Date().getFullYear() %> Nexus Gaming Cafe. All rights
+        reserved.
+      </p>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="/script.js"></script>
+    <script>
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get("success") === "true") {
+        alert("✅ Tournament registration successful!");
+        window.location.href = "/";
+      } else if (urlParams.get("success") === "false") {
+        alert("❌ Failed to register team. Please try again.");
+      }
+    </script>
+  </body>
+</html>
