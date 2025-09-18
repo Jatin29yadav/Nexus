@@ -3,23 +3,17 @@ const Schema = mongoose.Schema;
 
 const messageSchema = new Schema({
   name: {
-    type: String,
-    required: true,
-    trim: true,
+    type: Schema.Types.ObjectId,
+    ref: "User",
   },
   email: {
-    type: String,
-    required: true,
-    match: [/.+@.+\..+/, "Please enter a valid email"],
+    type: Schema.Types.ObjectId,
+    ref: "User",
   },
-  message: {
-    type: String,
-    required: true,
-    minLength: 5,
-  },
+  message: String,
   createdAt: {
     type: Date,
-    default: Date.now,
+    default: Date.now(),
   },
 });
 

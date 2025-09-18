@@ -17,16 +17,6 @@ _A minimal listings app built with Express, EJS, and MongoDB._
 
 ---
 
-## ✨ Features
-
-- Create, read, update, and delete listings
-- Each listing includes title, description, location, country, image URL, and price
-- Clean card-based UI with responsive design
-- Form validations handled by Mongoose
-- Method override support for PATCH & DELETE requests
-
----
-
 ## 🛠 Tech Stack
 
 - [Node.js](https://nodejs.org/) + [Express](https://expressjs.com/)

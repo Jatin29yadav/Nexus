@@ -1,11 +1,3 @@
-// script.js
-// Improved, defensive, and slightly more performant version of your script.
-// - Wrapped initialization in DOMContentLoaded
-// - Uses requestAnimationFrame for scroll-driven DOM writes
-// - Handles same-page hash-links for smooth scrolling
-// - Logs useful debug info
-// Indentation: 2 spaces
-
 (function () {
   "use strict";
 

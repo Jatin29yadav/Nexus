@@ -1,0 +1,42 @@
+<nav
+  class="navbar fixed w-full z-50 transition-all duration-300 bg-gray-900/80 backdrop-blur-sm"
+>
+  <div class="container mx-auto px-6 py-4">
+    <div class="flex justify-between items-center">
+      <a
+        href="/"
+        class="text-2xl font-bold gradient-text hover:scale-105 transition-transform"
+        >NEXUS</a
+      >
+      <div class="hidden md:flex space-x-8">
+        <a href="/" class="nav-link">Home</a>
+        <a href="/register" class="nav-link">Register</a>
+        <a href="/bookings" class="nav-link">Booking</a>
+        <a href="/tournament/list" class="nav-link">Tournaments</a>
+        <a href="/gallery" class="nav-link">Gallery</a>
+        <a href="/contact" class="nav-link">Contact</a>
+      </div>
+      <button
+        id="menu-btn"
+        class="md:hidden text-xl hover:text-purple-500 transition-colors"
+      >
+        <i class="fas fa-bars"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile Menu -->
+  <div
+    class="md:hidden hidden absolute w-full bg-gray-800/95 backdrop-blur-sm"
+    id="mobile-menu"
+  >
+    <div class="px-6 py-4 flex flex-col space-y-4">
+      <a href="/" class="nav-link">Home</a>
+      <a href="/register" class="nav-link">Register</a>
+      <a href="/bookings" class="nav-link">Booking</a>
+      <a href="/tournament/list" class="nav-link">Tournaments</a>
+      <a href="/gallery" class="nav-link">Gallery</a>
+      <a href="/contact" class="nav-link">Contact</a>
+    </div>
+  </div>
+</nav>
