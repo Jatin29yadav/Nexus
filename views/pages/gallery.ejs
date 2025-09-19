@@ -1,191 +1,74 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Nexus Gaming Cafe - Gallery</title>
-    <link
-      href="https://fonts.googleapis.com/css2?family=K2D:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap"
-      rel="stylesheet"
-    />
-    <style>
-      * {
-        font-family: "K2D", sans-serif;
-      }
-    </style>
-    <!-- Tailwind -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
-    <link rel="stylesheet" href="/styles.css" />
-    <style>
-      /* Masonry effect */
-      .masonry {
-        column-count: 3;
-        column-gap: 1rem;
-      }
-      .masonry img {
-        margin-bottom: 1rem;
-        border-radius: 0.75rem;
-        display: block;
-        width: 100%;
-      }
-      @media (max-width: 1024px) {
-        .masonry {
-          column-count: 2;
-        }
-      }
-      @media (max-width: 640px) {
-        .masonry {
-          column-count: 1;
-        }
-      }
-    </style>
-  </head>
-  <body class="bg-gray-900 text-white">
-    <nav
-      class="navbar fixed w-full z-50 transition-all duration-300 bg-gray-900/80 backdrop-blur-sm"
-    >
-      <div class="container mx-auto px-6 py-4">
-        <div class="flex justify-between items-center">
-          <a
-            href="/"
-            class="text-2xl font-bold gradient-text hover:scale-105 transition-transform"
-            >NEXUS</a
-          >
-          <div class="hidden md:flex space-x-8">
-            <a href="/" class="nav-link">Home</a>
-            <a href="/register" class="nav-link">Register</a>
-            <a href="/login" class="nav-link">Login</a>
-            <a href="/tournament/list" class="nav-link">Tournaments</a>
-            <a href="/gallery" class="nav-link">Gallery</a>
-            <a href="/contact" class="nav-link">Contact</a>
-          </div>
-          <button
-            id="menu-btn"
-            class="md:hidden text-xl hover:text-purple-500 transition-colors"
-          >
-            <i class="fas fa-bars"></i>
-          </button>
-        </div>
-      </div>
-
-      <!-- Mobile Menu -->
-      <div
-        class="md:hidden hidden absolute w-full bg-gray-800/95 backdrop-blur-sm"
-        id="mobile-menu"
-      >
-        <div class="px-6 py-4 flex flex-col space-y-4">
-          <a href="/" class="nav-link">Home</a>
-          <a href="/register" class="nav-link">Register</a>
-          <a href="/login" class="nav-link">Login</a>
-          <a href="/tournament/list" class="nav-link">Tournaments</a>
-          <a href="/gallery" class="nav-link">Gallery</a>
-          <a href="/contact" class="nav-link">Contact</a>
-        </div>
-      </div>
-    </nav>
-
-    <!-- ✅ Gallery Section -->
-    <section id="gallery" class="py-32 bg-gray-900">
-      <div class="container mx-auto px-6">
-        <div class="text-center mb-12" data-aos="fade-up">
-          <h2 class="text-4xl font-bold mb-4 gradient-text">
-            Our Gaming Gallery
-          </h2>
-          <p class="text-gray-400 max-w-2xl mx-auto">
-            Take a sneak peek at Nexus Gaming Cafe’s vibrant atmosphere,
-            high-end setups, and exciting tournaments.
-          </p>
-        </div>
-
-        <!-- Masonry Gallery -->
-        <div class="masonry" data-aos="fade-up">
-          <img
-            src="https://images.wallpapersden.com/image/download/ghostrunner-4k-gaming_bWdmZ26UmZqaraWkpJRobWllrWdma2U.jpg"
-            alt="Gaming Setup"
-          />
-          <img
-            src="https://images.wallpapersden.com/image/download/gaming-poster-of-horizon-call-of-the-mountain-4k_bmVrbWuUmZqaraWkpJRobWllrWdma2U.jpg"
-            alt="Esports Tournament"
-          />
-          <img
-            src="https://images.wallpapersden.com/image/download/assassins-s-creed-shadows-4k-gaming_bmdtZWmUmZqaraWkpJRobWllrWdmbm4.jpg"
-            alt="Gaming Zone"
-          />
-          <img
-            src="https://rog.asus.com/media/1610082227143.jpg"
-            alt="LAN Party"
-          />
-          <img
-            src="https://assets-prd.ignimgs.com/2024/10/04/hero-1728069720656.jpg"
-            alt="VR Gaming"
-          />
-          <img
-            src="https://wallpapergod.com/images/hd/4k-gaming-1920X1200-wallpaper-0denz88iym8rdn99.jpeg"
-            alt="Team Play"
-          />
-          <img
-            src="https://i.pcmag.com/imagery/articles/01RLf3lINnMJWWXfu0kRbwX-10.fit_lim.v1654713650.jpg"
-            alt="Cafe Interior"
-          />
-          <img
-            src="https://wallpaperbat.com/img/72528-teppen-game-wallpaper-hd-games-4k-wallpaper-image-photo.jpg"
-            alt="Gamers in Action"
-          />
-          <img
-            src="https://wallpapercave.com/wp/wp4983330.jpg"
-            alt="Gaming PCs"
-          />
-          <img
-            src="https://wallpapercave.com/wp/wp7346279.jpg"
-            alt="Gaming PCs"
-          />
-          <img
-            src="https://www.pixel4k.com/wp-content/uploads/2018/03/Gorgeous%20Game%20Girl.jpeg215726572.jpg"
-            alt="Gaming PCs"
-          />
-          <img
-            src="https://rare-gallery.com/uploads/posts/583119-games-4k-computer.jpg"
-            alt="Gaming PCs"
-          />
-          <img
-            src="https://4kwallpapers.com/images/walls/thumbs/23782.jpg"
-            alt="Gaming PCs"
-          />
-          <img
-            src="https://c4.wallpaperflare.com/wallpaper/162/894/557/colorful-neon-computer-keyboards-wallpaper-preview.jpg"
-            alt="Gaming PCs"
-          />
-          <img
-            src="https://images.alphacoders.com/132/1327999.jpeg"
-            alt="Gaming PCs"
-          />
-        </div>
-        <div class="text-center mt-6">
-          <a
-            href="/"
-            class="bg-gray-700 hover:bg-gray-600 px-6 py-2 rounded-lg text-white font-semibold transition-all transform hover:scale-105 shadow-md inline-block"
-          >
-            🏠 Go Home
-          </a>
-        </div>
-      </div>
-    </section>
-
-    <!-- ✅ Footer -->
-    <footer class="bg-gray-800 py-6 text-center text-gray-400">
-      <p>
-        © <%= new Date().getFullYear() %> Nexus Gaming Cafe. All rights
-        reserved.
+<!-- ✅ Gallery Section -->
+<section id="gallery" class="py-32 bg-gray-900">
+  <div class="container mx-auto px-6">
+    <div class="text-center mb-12" data-aos="fade-up">
+      <h2 class="text-4xl font-bold mb-4 gradient-text">Our Gaming Gallery</h2>
+      <p class="text-gray-400 max-w-2xl mx-auto">
+        Take a sneak peek at Nexus Gaming Cafe’s vibrant atmosphere, high-end
+        setups, and exciting tournaments.
       </p>
-    </footer>
-
-    <!-- Scripts -->
-    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-    <script src="/script.js"></script>
-  </body>
-</html>
+    </div>
+    <!-- Masonry Gallery -->
+    <div class="masonry" data-aos="fade-up">
+      <img
+        src="https://images.wallpapersden.com/image/download/ghostrunner-4k-gaming_bWdmZ26UmZqaraWkpJRobWllrWdma2U.jpg"
+        alt="Gaming Setup"
+      />
+      <img
+        src="https://images.wallpapersden.com/image/download/gaming-poster-of-horizon-call-of-the-mountain-4k_bmVrbWuUmZqaraWkpJRobWllrWdma2U.jpg"
+        alt="Esports Tournament"
+      />
+      <img
+        src="https://images.wallpapersden.com/image/download/assassins-s-creed-shadows-4k-gaming_bmdtZWmUmZqaraWkpJRobWllrWdmbm4.jpg"
+        alt="Gaming Zone"
+      />
+      <img src="https://rog.asus.com/media/1610082227143.jpg" alt="LAN Party" />
+      <img
+        src="https://assets-prd.ignimgs.com/2024/10/04/hero-1728069720656.jpg"
+        alt="VR Gaming"
+      />
+      <img
+        src="https://wallpapergod.com/images/hd/4k-gaming-1920X1200-wallpaper-0denz88iym8rdn99.jpeg"
+        alt="Team Play"
+      />
+      <img
+        src="https://i.pcmag.com/imagery/articles/01RLf3lINnMJWWXfu0kRbwX-10.fit_lim.v1654713650.jpg"
+        alt="Cafe Interior"
+      />
+      <img
+        src="https://wallpaperbat.com/img/72528-teppen-game-wallpaper-hd-games-4k-wallpaper-image-photo.jpg"
+        alt="Gamers in Action"
+      />
+      <img src="https://wallpapercave.com/wp/wp4983330.jpg" alt="Gaming PCs" />
+      <img src="https://wallpapercave.com/wp/wp7346279.jpg" alt="Gaming PCs" />
+      <img
+        src="https://www.pixel4k.com/wp-content/uploads/2018/03/Gorgeous%20Game%20Girl.jpeg215726572.jpg"
+        alt="Gaming PCs"
+      />
+      <img
+        src="https://rare-gallery.com/uploads/posts/583119-games-4k-computer.jpg"
+        alt="Gaming PCs"
+      />
+      <img
+        src="https://4kwallpapers.com/images/walls/thumbs/23782.jpg"
+        alt="Gaming PCs"
+      />
+      <img
+        src="https://c4.wallpaperflare.com/wallpaper/162/894/557/colorful-neon-computer-keyboards-wallpaper-preview.jpg"
+        alt="Gaming PCs"
+      />
+      <img
+        src="https://images.alphacoders.com/132/1327999.jpeg"
+        alt="Gaming PCs"
+      />
+    </div>
+    <div class="text-center mt-6">
+      <a
+        href="/"
+        class="bg-gray-700 hover:bg-gray-600 px-6 py-2 rounded-lg text-white font-semibold transition-all transform hover:scale-105 shadow-md inline-block"
+      >
+        🏠 Go Home
+      </a>
+    </div>
+  </div>
+</section>

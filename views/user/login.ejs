@@ -1,181 +1,84 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Nexus Gaming Cafe - Login</title>
+<!-- Login Section -->
+<section id="login" class="py-32 bg-gray-900">
+  <div class="container mx-auto px-6">
+    <div class="text-center mb-12" data-aos="fade-up">
+      <h2 class="text-4xl font-bold mb-4 gradient-text">Welcome Back</h2>
+      <p class="text-gray-400 max-w-2xl mx-auto">
+        Login to continue your ultimate gaming experience.
+      </p>
+    </div>
 
-    <!-- Tailwind -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=K2D:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap"
-      rel="stylesheet"
-    />
-    <style>
-      * {
-        font-family: "K2D", sans-serif;
-      }
-    </style>
-
-    <!-- Your extracted CSS -->
-    <link rel="stylesheet" href="/styles.css" />
-  </head>
-  <body class="bg-gray-900 text-white">
-    <!-- Navigation -->
-    <nav
-      class="navbar fixed w-full z-50 transition-all duration-300 bg-gray-900/80 backdrop-blur-sm"
+    <div
+      class="max-w-2xl mx-auto bg-gray-800 p-8 rounded-xl shadow-lg hover-glow"
+      data-aos="fade-up"
     >
-      <div class="container mx-auto px-6 py-4">
-        <div class="flex justify-between items-center">
+      <form action="/login" method="POST" class="space-y-6">
+        <!-- Email -->
+        <div>
+          <label class="block text-gray-300 mb-2 font-semibold">Email</label>
+          <input
+            type="email"
+            name="email"
+            required
+            class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
+            placeholder="Enter your email"
+          />
+        </div>
+
+        <!-- Password -->
+        <div>
+          <label class="block text-gray-300 mb-2 font-semibold">Password</label>
+          <input
+            type="password"
+            name="password"
+            required
+            class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
+            placeholder="Enter your password"
+          />
+        </div>
+
+        <!-- Remember me -->
+        <div class="flex items-center justify-between">
+          <label class="flex items-center text-gray-400 text-sm">
+            <input
+              type="checkbox"
+              name="remember"
+              class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-700 rounded"
+            />
+            <span class="ml-2">Remember me</span>
+          </label>
           <a
-            href="/"
-            class="text-2xl font-bold gradient-text hover:scale-105 transition-transform"
-            >NEXUS</a
+            href="/forgot-password"
+            class="text-purple-500 hover:underline text-sm"
           >
-          <div class="hidden md:flex space-x-8">
-            <a href="/" class="nav-link">Home</a>
-            <a href="/register" class="nav-link">Register</a>
-            <a href="/login" class="nav-link">Login</a>
-          </div>
-          <button
-            id="menu-btn"
-            class="md:hidden text-xl hover:text-purple-500 transition-colors"
-          >
-            <i class="fas fa-bars"></i>
-          </button>
-        </div>
-      </div>
-      <!-- Mobile Menu -->
-      <div
-        class="md:hidden hidden absolute w-full bg-gray-800/95 backdrop-blur-sm"
-        id="mobile-menu"
-      >
-        <div class="px-6 py-4 flex flex-col space-y-4">
-          <a href="/" class="nav-link">Home</a>
-          <a href="/register" class="nav-link">Register</a>
-          <a href="/login" class="nav-link">Login</a>
-        </div>
-      </div>
-    </nav>
-
-    <!-- Login Section -->
-    <section id="login" class="py-32 bg-gray-900">
-      <div class="container mx-auto px-6">
-        <div class="text-center mb-12" data-aos="fade-up">
-          <h2 class="text-4xl font-bold mb-4 gradient-text">Welcome Back</h2>
-          <p class="text-gray-400 max-w-2xl mx-auto">
-            Login to continue your ultimate gaming experience.
-          </p>
-        </div>
-
-        <div
-          class="max-w-2xl mx-auto bg-gray-800 p-8 rounded-xl shadow-lg hover-glow"
-          data-aos="fade-up"
-        >
-          <form action="/login" method="POST" class="space-y-6">
-            <!-- Email -->
-            <div>
-              <label class="block text-gray-300 mb-2 font-semibold"
-                >Email</label
-              >
-              <input
-                type="email"
-                name="email"
-                required
-                class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
-                placeholder="Enter your email"
-              />
-            </div>
-
-            <!-- Password -->
-            <div>
-              <label class="block text-gray-300 mb-2 font-semibold"
-                >Password</label
-              >
-              <input
-                type="password"
-                name="password"
-                required
-                class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
-                placeholder="Enter your password"
-              />
-            </div>
-
-            <!-- Remember me -->
-            <div class="flex items-center justify-between">
-              <label class="flex items-center text-gray-400 text-sm">
-                <input
-                  type="checkbox"
-                  name="remember"
-                  class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-700 rounded"
-                />
-                <span class="ml-2">Remember me</span>
-              </label>
-              <a
-                href="/forgot-password"
-                class="text-purple-500 hover:underline text-sm"
-              >
-                Forgot Password?
-              </a>
-            </div>
-
-            <!-- Submit Button -->
-            <button
-              type="submit"
-              class="w-full bg-purple-600 hover:bg-purple-700 px-8 py-3 rounded-lg text-lg font-semibold transition-all transform hover:scale-105 hover-glow"
-            >
-              Login
-            </button>
-          </form>
-
-          <!-- No account yet -->
-          <p class="text-gray-400 text-center mt-6">
-            Don’t have an account?
-            <a href="/register" class="text-purple-500 hover:underline"
-              >Register here</a
-            >
-          </p>
-        </div>
-        <div class="text-center mt-6">
-          <a
-            href="/"
-            class="bg-gray-700 hover:bg-gray-600 px-6 py-2 rounded-lg text-white font-semibold transition-all transform hover:scale-105 shadow-md inline-block"
-          >
-            🏠 Go Home
+            Forgot Password?
           </a>
         </div>
-      </div>
-    </section>
 
-    <!-- Scripts -->
-    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-    <script src="/script.js"></script>
-    <!-- SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <!-- Submit Button -->
+        <button
+          type="submit"
+          class="w-full bg-purple-600 hover:bg-purple-700 px-8 py-3 rounded-lg text-lg font-semibold transition-all transform hover:scale-105 hover-glow"
+        >
+          Login
+        </button>
+      </form>
 
-    <script>
-      const params = new URLSearchParams(window.location.search);
-
-      if (params.get("success") === "loggedin") {
-        Swal.fire("🎉 Welcome!", "You are logged in successfully.", "success");
-      }
-
-      if (params.get("error") === "invalid") {
-        Swal.fire("❌ Login Failed", "Invalid username or password.", "error");
-      }
-
-      if (params.get("error") === "server") {
-        Swal.fire(
-          "⚠️ Server Error",
-          "Something went wrong. Try again.",
-          "warning"
-        );
-      }
-    </script>
-  </body>
-</html>
+      <!-- No account yet -->
+      <p class="text-gray-400 text-center mt-6">
+        Don’t have an account?
+        <a href="/register" class="text-purple-500 hover:underline"
+          >Register here</a
+        >
+      </p>
+    </div>
+    <div class="text-center mt-6">
+      <a
+        href="/"
+        class="bg-gray-700 hover:bg-gray-600 px-6 py-2 rounded-lg text-white font-semibold transition-all transform hover:scale-105 shadow-md inline-block"
+      >
+        🏠 Go Home
+      </a>
+    </div>
+  </div>
+</section>

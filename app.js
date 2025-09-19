@@ -9,9 +9,7 @@ const session = require("express-session");
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
 const User = require("./models/User.js");
-const Message = require("./models/Message.js");
 const Tournament = require("./models/Tournament");
-const Booking = require("./models/Booking");
 
 let port = 3006;
 
@@ -43,6 +41,9 @@ app.use((req, res, next) => {
   next();
 });
 
+const userRouter = require("./routes/user.js");
+const bookingRouter = require("./routes/booking.js");
+
 app.use(expressLayouts);
 app.set("layout", "layouts/boilerplate");
 app.use(methodOverride("_method"));
@@ -71,63 +72,15 @@ app.get("/", (req, res) => {
   res.render("pages/index.ejs");
 });
 
-app.post("/register", async (req, res) => {
-  try {
-    let { username, email, password, confirmPassword, phone } = req.body;
-
-    if (password !== confirmPassword) {
-      return res.redirect("/register?error=password");
-    }
-
-    let newUser = new User({ username, email, password, phone });
-    await newUser.save();
-
-    return res.redirect("/?success=registered");
-  } catch (err) {
-    console.error(err);
-    return res.redirect("/");
-  }
-});
-
-app.post("/login", async (req, res) => {
-  try {
-    let { email, password } = req.body;
-    let user = await User.findOne({ email });
-
-    if (!user || user.password !== password) {
-      return res.redirect("/login?error=invalid");
-    }
-
-    return res.redirect("/");
-  } catch (err) {
-    console.error(err);
-    return res.redirect("/login?error=server");
-  }
-});
-
-app.get("/contact", (req, res) => {
-  res.render("pages/contact.ejs");
-});
-
-app.post("/contact", async (req, res) => {
-  try {
-    let { name, email, message } = req.body;
-    let newMessage = new Message({ name, email, message });
-    await newMessage.save();
-
-    res.redirect("/contact");
-  } catch (err) {
-    console.log("ERROR :", err);
-    res.redirect("/contact");
-  }
-});
+app.use("/", userRouter);
+app.use("/", bookingRouter);
 
 app.get("/payment", (req, res) => {
   res.render("pages/payment.ejs");
 });
 
 app.get("/gallery", (req, res) => {
-  res.render("gallery.ejs");
+  res.render("pages/gallery.ejs");
 });
 
 app.get("/tournament", (req, res) => {
@@ -138,21 +91,19 @@ app.post("/tournament", async (req, res) => {
   try {
     const { teamName, captainName, captainEmail, captainPhone, members } =
       req.body;
-    const memberArray = members ? members.split(",").map((m) => m.trim()) : [];
-
     const newTournament = new Tournament({
       teamName,
       captainName,
       captainEmail,
       captainPhone,
-      members: memberArray,
+      members,
     });
 
     await newTournament.save();
-    res.redirect("/tournament?success=true");
+    res.redirect("/tournament/list");
   } catch (err) {
     console.error("Tournament registration error:", err);
-    res.redirect("/tournament?success=false");
+    res.redirect("/tournament");
   }
 });
 
@@ -163,70 +114,6 @@ app.get("/tournament/list", async (req, res) => {
   } catch (err) {
     console.error("Error fetching teams:", err);
     res.redirect("/tournament?success=false");
-  }
-});
-
-app.get("/booking", (req, res) => {
-  res.render("booking");
-});
-
-app.post("/booking", async (req, res) => {
-  try {
-    const {
-      name,
-      email,
-      phone,
-      membersCount,
-      membersName,
-      bookingType,
-      bookingTime,
-    } = req.body;
-
-    const memberList = membersName
-      ? membersName
-          .split(",")
-          .map((m) => m.trim())
-          .filter(Boolean)
-      : [];
-
-    const booking = new Booking({
-      name,
-      email,
-      phone,
-      membersCount,
-      membersName: memberList,
-      bookingType,
-      bookingTime: {
-        start: bookingTime.start,
-        end: bookingTime.end,
-      },
-    });
-
-    await booking.save();
-    res.send(`
-      <script>
-        alert("✅ Booking Successful!");
-        window.location.href = "/"; // redirect back to booking page
-      </script>
-    `);
-  } catch (error) {
-    console.error(error);
-    res.send(`
-      <script>
-        alert("❌ Error saving booking: ${error.message}");
-        window.location.href = "/booking"; // stay on booking page
-      </script>
-    `);
-  }
-});
-
-app.get("/bookings", async (req, res) => {
-  try {
-    const bookings = await Booking.find();
-    res.render("bookingList.ejs", { bookings });
-  } catch (err) {
-    console.error(err);
-    res.send("Error fetching bookings");
   }
 });
 

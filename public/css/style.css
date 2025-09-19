@@ -1,5 +1,5 @@
 * {
-  font-family: "Exo 2", sans-serif;
+  font-family: "K2D", sans-serif;
 }
 /* styles.css */
 /* extracted from original <style> — order preserved */
@@ -76,4 +76,26 @@
 }
 .tournament-card:hover {
   transform: translateY(-10px);
+}
+
+/* Masonry effect */
+.masonry {
+  column-count: 3;
+  column-gap: 1rem;
+}
+.masonry img {
+  margin-bottom: 1rem;
+  border-radius: 0.75rem;
+  display: block;
+  width: 100%;
+}
+@media (max-width: 1024px) {
+  .masonry {
+    column-count: 2;
+  }
+}
+@media (max-width: 640px) {
+  .masonry {
+    column-count: 1;
+  }
 }

@@ -1,195 +1,99 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Nexus Gaming Cafe - Payment</title>
-    <link
-      href="https://fonts.googleapis.com/css2?family=K2D:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap"
-      rel="stylesheet"
-    />
-    <style>
-      * {
-        font-family: "K2D", sans-serif;
-      }
-    </style>
-    <!-- Tailwind -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
-    <link rel="stylesheet" href="/styles.css" />
-  </head>
-  <body class="bg-gray-900 text-white">
-    <nav
-      class="navbar fixed w-full z-50 transition-all duration-300 bg-gray-900/80 backdrop-blur-sm"
+<!-- ✅ Payment Section -->
+<section class="py-32 bg-gray-900">
+  <div class="container mx-auto px-6 max-w-lg">
+    <div
+      class="bg-gray-800 p-8 rounded-xl shadow-lg hover-glow"
+      data-aos="fade-up"
     >
-      <div class="container mx-auto px-6 py-4">
-        <div class="flex justify-between items-center">
-          <a
-            href="/"
-            class="text-2xl font-bold gradient-text hover:scale-105 transition-transform"
-            >NEXUS</a
-          >
-          <div class="hidden md:flex space-x-8">
-            <a href="/" class="nav-link">Home</a>
-            <a href="/register" class="nav-link">Register</a>
-            <a href="/login" class="nav-link">Login</a>
-            <a href="/tournament/list" class="nav-link">Tournaments</a>
-            <a href="/gallery" class="nav-link">Gallery</a>
-            <a href="/contact" class="nav-link">Contact</a>
-          </div>
-          <button
-            id="menu-btn"
-            class="md:hidden text-xl hover:text-purple-500 transition-colors"
-          >
-            <i class="fas fa-bars"></i>
-          </button>
-        </div>
-      </div>
-
-      <!-- Mobile Menu -->
-      <div
-        class="md:hidden hidden absolute w-full bg-gray-800/95 backdrop-blur-sm"
-        id="mobile-menu"
-      >
-        <div class="px-6 py-4 flex flex-col space-y-4">
-          <a href="/" class="nav-link">Home</a>
-          <a href="/register" class="nav-link">Register</a>
-          <a href="/login" class="nav-link">Login</a>
-          <a href="/tournament/list" class="nav-link">Tournaments</a>
-          <a href="/gallery" class="nav-link">Gallery</a>
-          <a href="/contact" class="nav-link">Contact</a>
-        </div>
-      </div>
-    </nav>
-
-    <!-- ✅ Payment Section -->
-    <section class="py-32 bg-gray-900">
-      <div class="container mx-auto px-6 max-w-lg">
-        <div
-          class="bg-gray-800 p-8 rounded-xl shadow-lg hover-glow"
-          data-aos="fade-up"
-        >
-          <h2 class="text-3xl font-bold mb-6 gradient-text text-center">
-            Payment Portal
-          </h2>
-          <p class="text-gray-400 mb-8 text-center">
-            Complete your payment securely. (This is a demo page, no real
-            payment will be processed.)
-          </p>
-
-          <form class="space-y-6">
-            <!-- Cardholder Name -->
-            <div>
-              <label class="block text-gray-300 mb-2 font-semibold"
-                >Cardholder Name</label
-              >
-              <input
-                type="text"
-                required
-                class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
-                placeholder="John Doe"
-              />
-            </div>
-
-            <!-- Card Number -->
-            <div>
-              <label class="block text-gray-300 mb-2 font-semibold"
-                >Card Number</label
-              >
-              <input
-                type="text"
-                required
-                maxlength="16"
-                class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
-                placeholder="1234 5678 9012 3456"
-              />
-            </div>
-
-            <!-- Expiry & CVV -->
-            <div class="flex space-x-4">
-              <div class="flex-1">
-                <label class="block text-gray-300 mb-2 font-semibold"
-                  >Expiry Date</label
-                >
-                <input
-                  type="text"
-                  required
-                  maxlength="5"
-                  class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
-                  placeholder="MM/YY"
-                />
-              </div>
-              <div class="flex-1">
-                <label class="block text-gray-300 mb-2 font-semibold"
-                  >CVV</label
-                >
-                <input
-                  type="password"
-                  required
-                  maxlength="3"
-                  class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
-                  placeholder="123"
-                />
-              </div>
-            </div>
-
-            <!-- Amount -->
-            <div>
-              <label class="block text-gray-300 mb-2 font-semibold"
-                >Amount</label
-              >
-              <input
-                type="number"
-                required
-                class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
-                placeholder="1000"
-              />
-            </div>
-
-            <!-- Pay Button -->
-            <button
-              type="button"
-              onclick="fakePayment()"
-              class="w-full bg-purple-600 hover:bg-purple-700 px-8 py-3 rounded-lg text-lg font-semibold transition-all transform hover:scale-105 hover-glow"
-            >
-              Pay Now
-            </button>
-
-            <!-- Back Button -->
-            <a
-              href="/"
-              class="block text-center mt-4 text-purple-400 hover:underline"
-              >← Back to Home</a
-            >
-          </form>
-        </div>
-      </div>
-    </section>
-
-    <!-- ✅ Footer -->
-    <footer class="bg-gray-800 py-6 text-center text-gray-400">
-      <p>
-        © <%= new Date().getFullYear() %> Nexus Gaming Cafe. All rights
-        reserved.
+      <h2 class="text-3xl font-bold mb-6 gradient-text text-center">
+        Payment Portal
+      </h2>
+      <p class="text-gray-400 mb-8 text-center">
+        Complete your payment securely. (This is a demo page, no real payment
+        will be processed.)
       </p>
-    </footer>
 
-    <!-- Fake payment script -->
-    <script>
-      function fakePayment() {
-        alert(
-          "✅ Payment successful! Thank you for booking with Nexus Gaming Cafe."
-        );
-        window.location.href = "/"; // redirect to home
-      }
-    </script>
+      <form class="space-y-6">
+        <!-- Cardholder Name -->
+        <div>
+          <label class="block text-gray-300 mb-2 font-semibold"
+            >Cardholder Name</label
+          >
+          <input
+            type="text"
+            required
+            class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
+            placeholder="John Doe"
+          />
+        </div>
 
-    <!-- Scripts -->
-    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-    <script src="/script.js"></script>
-  </body>
-</html>
+        <!-- Card Number -->
+        <div>
+          <label class="block text-gray-300 mb-2 font-semibold"
+            >Card Number</label
+          >
+          <input
+            type="text"
+            required
+            maxlength="16"
+            class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
+            placeholder="1234 5678 9012 3456"
+          />
+        </div>
+
+        <!-- Expiry & CVV -->
+        <div class="flex space-x-4">
+          <div class="flex-1">
+            <label class="block text-gray-300 mb-2 font-semibold"
+              >Expiry Date</label
+            >
+            <input
+              type="text"
+              required
+              maxlength="5"
+              class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
+              placeholder="MM/YY"
+            />
+          </div>
+          <div class="flex-1">
+            <label class="block text-gray-300 mb-2 font-semibold">CVV</label>
+            <input
+              type="password"
+              required
+              maxlength="3"
+              class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
+              placeholder="123"
+            />
+          </div>
+        </div>
+
+        <!-- Amount -->
+        <div>
+          <label class="block text-gray-300 mb-2 font-semibold">Amount</label>
+          <input
+            type="number"
+            required
+            class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
+            placeholder="1000"
+          />
+        </div>
+
+        <!-- Pay Button -->
+        <button
+          type="button"
+          onclick="fakePayment()"
+          class="w-full bg-purple-600 hover:bg-purple-700 px-8 py-3 rounded-lg text-lg font-semibold transition-all transform hover:scale-105 hover-glow"
+        >
+          Pay Now
+        </button>
+
+        <!-- Back Button -->
+        <a
+          href="/"
+          class="block text-center mt-4 text-purple-400 hover:underline"
+          >← Back to Home</a
+        >
+      </form>
+    </div>
+  </div>
+</section>
