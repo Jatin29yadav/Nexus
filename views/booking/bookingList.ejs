@@ -8,57 +8,50 @@
   <% } else { %>
   <div class="grid gap-6 md:grid-cols-2">
     <% bookings.forEach(booking => { %>
-    <div class="bg-gray-800 p-6 rounded-xl shadow-lg hover-glow">
+    <div
+      class="bg-gray-800/60 backdrop-blur-lg border border-gray-700/50 p-6 rounded-2xl shadow-lg hover-glow transform transition-all hover:scale-[1.02]"
+    >
       <h2 class="text-xl font-semibold text-purple-400 mb-2">
-        <i class="fa-solid fa-user"></i> <%= booking.name %>
+        👤 <%= booking.name %>
       </h2>
-      <p>
-        <i class="fa-solid fa-envelope"></i>
-        <strong>Email:</strong> <%= booking.email %>
-      </p>
-      <p>
-        <i class="fa-solid fa-phone"></i>
-        <strong>Phone:</strong> <%= booking.phone %>
-      </p>
-      <p>
-        <i class="fa-solid fa-users"></i>
-        <strong>Members:</strong> <%= booking.membersCount %>
-      </p>
+
+      <p>📧 <strong>Email:</strong> <%= booking.email %></p>
+      <p>📞 <strong>Phone:</strong> <%= booking.phone %></p>
+      <p>👥 <strong>Members:</strong> <%= booking.membersCount %></p>
 
       <% if (booking.membersName.length > 0) { %>
       <p class="mt-2">
-        <i class="fa-solid fa-user-group"></i>
-        <strong>Names:</strong> <%= booking.membersName.join(", ") %>
+        📝 <strong>Names:</strong> <%= booking.membersName.join(", ") %>
       </p>
       <% } %>
 
+      <p class="mt-2">💻 <strong>Type:</strong> <%= booking.bookingType %></p>
       <p class="mt-2">
-        <i class="fa-solid fa-computer"></i>
-        <strong>Type:</strong> <%= booking.bookingType %>
-      </p>
-
-      <p class="mt-2">
-        <i class="fa-regular fa-clock"></i>
-        <strong>Time:</strong>
-        <%= booking.bookingTime.start %> → <%= booking.bookingTime.end %>
+        ⏰ <strong>Time:</strong>
+        <%= new Date(booking.bookingTime.start).toLocaleString("en-IN", {
+        dateStyle: "medium", timeStyle: "short" }) %> → <%= new
+        Date(booking.bookingTime.end).toLocaleString("en-IN", { dateStyle:
+        "medium", timeStyle: "short" }) %>
       </p>
     </div>
     <% }) %>
   </div>
   <% } %>
 
+  <!-- Buttons -->
   <div class="text-center mt-8">
     <a
       href="/booking"
-      class="bg-purple-600 hover:bg-purple-700 px-8 py-3 rounded-lg text-lg font-semibold transition-all transform hover:scale-105 hover-glow"
+      class="bg-purple-600 hover:bg-purple-700 px-8 py-3 rounded-xl text-lg font-semibold transition-all transform hover:scale-105 hover-glow"
     >
       ➕ New Booking
     </a>
   </div>
+
   <div class="text-center mt-6">
     <a
       href="/"
-      class="bg-gray-700 hover:bg-gray-600 px-6 py-2 rounded-lg text-white font-semibold transition-all transform hover:scale-105 shadow-md inline-block"
+      class="bg-gray-700 hover:bg-gray-600 px-6 py-2 rounded-xl text-white font-semibold transition-all transform hover:scale-105 shadow-md inline-block"
     >
       🏠 Go Home
     </a>

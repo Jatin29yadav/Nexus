@@ -1,7 +1,7 @@
-<!-- ✅ Tournament Registration -->
+<!-- ✅ Tournament Registration (Styled like All Bookings) -->
 <section class="py-32 bg-gray-900">
   <div
-    class="container mx-auto px-6 max-w-3xl bg-gray-800 p-8 rounded-xl shadow-lg hover-glow"
+    class="container mx-auto px-6 max-w-3xl bg-gray-800/60 backdrop-blur-lg border border-gray-700/50 p-8 rounded-2xl shadow-lg hover-glow transform transition-all hover:scale-[1.02]"
     data-aos="fade-up"
   >
     <!-- Tournament Info -->
@@ -9,84 +9,96 @@
       <img
         src="https://images.wallpapersden.com/image/download/iso-valorant-x-overwatch-2-style_bmZsbWiUmZqaraWkpJRobWllrWdma2U.jpg"
         alt="Tournament Banner"
-        class="w-full h-64 object-cover rounded-lg mb-6"
+        class="w-full h-64 object-cover rounded-xl mb-6 shadow-md hover:opacity-95 transition-all hover:scale-[1.01]"
       />
-      <h2 class="text-3xl font-bold gradient-text">Valorant Championship</h2>
+      <h2 class="text-3xl font-bold gradient-text">🔥 Valorant Championship</h2>
       <p class="text-gray-400 mt-2">
-        💰 Prize Pool:
-        <span class="text-purple-400 font-semibold">$5,000</span>
+        💰 <span class="font-semibold text-purple-400">Prize Pool: $5,000</span>
       </p>
       <p class="text-gray-400">📅 June 15, 2023 | 🕑 2:00 PM EST</p>
     </div>
 
     <!-- Registration Form -->
     <form method="post" action="/tournament" class="space-y-6">
+      <!-- Team Name -->
       <div>
-        <label class="block text-gray-300 mb-2 font-semibold">Team Name</label>
+        <label class="block text-gray-300 mb-2 font-semibold"
+          >📝 Team Name</label
+        >
         <input
           type="text"
           name="teamName"
           required
-          class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
+          class="w-full bg-gray-900/60 border border-gray-700/50 rounded-xl px-4 py-2 focus:border-purple-500 focus:outline-none"
           placeholder="Enter your team name"
         />
       </div>
+
+      <!-- Captain -->
       <div>
         <label class="block text-gray-300 mb-2 font-semibold"
-          >Captain Name</label
+          >👑 Captain Name</label
         >
         <input
           type="text"
           name="captainName"
           required
-          class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
+          class="w-full bg-gray-900/60 border border-gray-700/50 rounded-xl px-4 py-2 focus:border-purple-500 focus:outline-none"
           placeholder="Team captain's name"
         />
       </div>
+
+      <!-- Email -->
       <div>
-        <label class="block text-gray-300 mb-2 font-semibold">Email</label>
+        <label class="block text-gray-300 mb-2 font-semibold">📧 Email</label>
         <input
           type="email"
           name="captainEmail"
           required
-          class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
+          class="w-full bg-gray-900/60 border border-gray-700/50 rounded-xl px-4 py-2 focus:border-purple-500 focus:outline-none"
           placeholder="Enter your email"
         />
       </div>
+
+      <!-- Phone -->
       <div>
-        <label class="block text-gray-300 mb-2 font-semibold">Phone</label>
+        <label class="block text-gray-300 mb-2 font-semibold">📞 Phone</label>
         <input
           type="tel"
           name="captainPhone"
           required
-          class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
+          class="w-full bg-gray-900/60 border border-gray-700/50 rounded-xl px-4 py-2 focus:border-purple-500 focus:outline-none"
           placeholder="Enter your phone number"
         />
       </div>
+
+      <!-- Members -->
       <div>
-        <label class="block text-gray-300 mb-2"
-          >Team Members (comma separated)</label
+        <label class="block text-gray-300 mb-2 font-semibold"
+          >👥 Team Members</label
         >
         <input
           type="text"
           name="members"
           placeholder="e.g. Jason, Jatin, Rohit"
-          class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
+          class="w-full bg-gray-900/60 border border-gray-700/50 rounded-xl px-4 py-2 focus:border-purple-500 focus:outline-none"
         />
       </div>
 
       <!-- Submit -->
       <button
         type="submit"
-        class="w-full bg-purple-600 hover:bg-purple-700 px-8 py-3 rounded-lg text-lg font-semibold transition-all transform hover:scale-105 hover-glow"
+        class="w-full bg-purple-600 hover:bg-purple-700 px-8 py-3 rounded-xl text-lg font-semibold transition-all transform hover:scale-105 hover-glow"
       >
-        Register Team
+        🚀 Register Team
       </button>
     </form>
+
+    <!-- Home -->
     <div class="text-center mt-6">
       <a
         href="/"
-        class="bg-gray-700 hover:bg-gray-600 px-6 py-2 rounded-lg text-white font-semibold transition-all transform hover:scale-105 shadow-md inline-block"
+        class="bg-gray-700 hover:bg-gray-600 px-6 py-2 rounded-xl text-white font-semibold transition-all transform hover:scale-105 shadow-md inline-block"
       >
         🏠 Go Home
       </a>

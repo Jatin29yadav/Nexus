@@ -1,42 +1,63 @@
-<!-- Main Content -->
-<section class="py-32">
+<section class="py-32 bg-gray-900 min-h-screen">
   <div class="container mx-auto px-6">
-    <h1 class="text-3xl font-bold text-center mb-8 gradient-text">
-      Registered Teams
+    <h1 class="text-3xl font-bold text-center mb-12 text-purple-400">
+      🏆 Registered Teams
     </h1>
+
     <% if (teams.length === 0) { %>
     <p class="text-center text-gray-400">No teams have registered yet.</p>
     <% } else { %>
-    <div class="grid gap-6 md:grid-cols-2">
+    <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
       <% teams.forEach(team => { %>
-      <div class="bg-gray-800 p-6 rounded-xl shadow-lg hover-glow">
-        <h2 class="text-xl font-semibold text-purple-400 mb-2">
+      <div
+        class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 transition-all transform hover:scale-105 hover:shadow-purple-500/30 hover:border-purple-500/50"
+      >
+        <!-- Team Name -->
+        <h2 class="text-xl font-bold text-purple-400 mb-4">
           <%= team.teamName %>
         </h2>
-        <p><strong>Captain:</strong> <%= team.captainName %></p>
-        <p><strong>Email:</strong> <%= team.captainEmail %></p>
-        <p><strong>Phone:</strong> <%= team.captainPhone %></p>
 
+        <!-- Captain Info -->
+        <div class="space-y-2 text-gray-300">
+          <p>
+            <span class="font-semibold text-white">👤 Captain:</span> <%=
+            team.captainName %>
+          </p>
+          <p>
+            <span class="font-semibold text-white">📧 Email:</span> <%=
+            team.captainEmail %>
+          </p>
+          <p>
+            <span class="font-semibold text-white">📱 Phone:</span> <%=
+            team.captainPhone %>
+          </p>
+        </div>
+
+        <!-- Members -->
         <% if (team.members.length > 0) { %>
-        <p class="mt-2">
-          <strong>Members:</strong> <%= team.members.join(", ") %>
-        </p>
+        <div class="mt-4">
+          <p class="font-semibold text-white mb-1">👥 Members:</p>
+          <div class="bg-gray-700 px-3 py-2 rounded-lg text-sm text-gray-300">
+            <%= team.members.join(", ") %>
+          </div>
+        </div>
         <% } else { %>
-        <p class="mt-2 text-gray-400 italic">No members listed</p>
+        <p class="mt-4 text-sm text-gray-500 italic">No members listed</p>
         <% } %>
       </div>
       <% }) %>
     </div>
     <% } %>
-    <div class="text-center mt-12">
+
+    <!-- Buttons -->
+    <div class="text-center mt-16 space-y-4">
       <a
         href="/tournament"
-        class="bg-purple-600 hover:bg-purple-700 px-8 py-3 rounded-lg text-lg font-semibold transition-all transform hover:scale-105 hover-glow inline-block"
+        class="bg-purple-600 hover:bg-purple-700 px-8 py-3 rounded-lg text-lg font-semibold transition-all transform hover:scale-105 shadow-lg inline-block"
       >
         🚀 Register Now
       </a>
-    </div>
-    <div class="text-center mt-6">
+      <br />
       <a
         href="/"
         class="bg-gray-700 hover:bg-gray-600 px-6 py-2 rounded-lg text-white font-semibold transition-all transform hover:scale-105 shadow-md inline-block"
