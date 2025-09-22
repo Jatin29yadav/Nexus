@@ -7,7 +7,6 @@
         Login to continue your ultimate gaming experience.
       </p>
     </div>
-
     <div
       class="max-w-2xl mx-auto bg-gray-800 p-8 rounded-xl shadow-lg hover-glow"
       data-aos="fade-up"
@@ -15,10 +14,11 @@
       <form action="/login" method="POST" class="space-y-6">
         <!-- Email -->
         <div>
-          <label class="block text-gray-300 mb-2 font-semibold">Email</label>
+          <label class="block text-gray-300 mb-2 font-semibold">Username</label>
           <input
-            type="email"
-            name="email"
+            type="text"
+            name="username"
+            id="username"
             required
             class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
             placeholder="Enter your email"
@@ -31,6 +31,7 @@
           <input
             type="password"
             name="password"
+            id="password"
             required
             class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 focus:border-purple-500 focus:outline-none"
             placeholder="Enter your password"

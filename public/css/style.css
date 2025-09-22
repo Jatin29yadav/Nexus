@@ -99,3 +99,25 @@
     column-count: 1;
   }
 }
+
+/* Auth Buttons (Login/Register/Logout) */
+.auth-btn {
+  padding: 0.4rem 1rem;
+  border-radius: 9999px; /* pill shape */
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  margin-left: 0.5rem;
+  display: inline-block;
+}
+
+/* Filled (Sign Up / Logout) */
+.auth-btn.filled {
+  background: linear-gradient(45deg, #8b5cf6, #ec4899);
+  color: white;
+}
+.auth-btn.filled:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.5);
+}

@@ -10,11 +10,16 @@
       >
       <div class="hidden md:flex space-x-8">
         <a href="/" class="nav-link">Home</a>
-        <a href="/register" class="nav-link">Register</a>
         <a href="/bookings" class="nav-link">Booking</a>
         <a href="/tournament/list" class="nav-link">Tournaments</a>
         <a href="/gallery" class="nav-link">Gallery</a>
         <a href="/contact" class="nav-link">Contact</a>
+        <% if(!currUser) { %>
+        <a href="/register" class="auth-btn filled">Sign Up</a>
+        <a href="/login" class="auth-btn filled">Login</a>
+        <% } %> <% if(currUser) { %>
+        <a href="/logout" class="auth-btn filled">Logout</a>
+        <% } %>
       </div>
       <button
         id="menu-btn"
@@ -32,11 +37,15 @@
   >
     <div class="px-6 py-4 flex flex-col space-y-4">
       <a href="/" class="nav-link">Home</a>
-      <a href="/register" class="nav-link">Register</a>
       <a href="/bookings" class="nav-link">Booking</a>
       <a href="/tournament/list" class="nav-link">Tournaments</a>
       <a href="/gallery" class="nav-link">Gallery</a>
       <a href="/contact" class="nav-link">Contact</a>
+      <% if(!currUser) { %>
+      <a href="/login" class="auth-btn filled">Sign Up / Login</a>
+      <% } %> <% if(currUser) { %>
+      <a class="nav-link" href="/logout">Logout</a>
+      <% } %>
     </div>
   </div>
 </nav>

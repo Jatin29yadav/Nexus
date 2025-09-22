@@ -1,27 +1,29 @@
-<% if(success && success.length){ %>
+<% if (success && success.length) { %>
 <div
-  class="alert alert-success alert-dismissible fade show col-6 offset-3 mt-3"
+  class="flash-message fixed top-20 left-1/2 -translate-x-1/2 max-w-xl w-full mx-auto flex items-center justify-between rounded-lg bg-green-100 text-green-800 px-4 py-3 shadow z-50"
   role="alert"
 >
-  <%= success %>
+  <span><%= success %></span>
   <button
     type="button"
-    class="btn-close"
-    data-bs-dismiss="alert"
-    aria-label="Close"
-  ></button>
+    class="ml-3 text-green-700 hover:text-green-900 focus:outline-none"
+    onclick="this.parentElement.remove()"
+  >
+    ✕
+  </button>
 </div>
-<% } %> <% if(error && error.length){ %>
+<% } %> <% if (error && error.length) { %>
 <div
-  class="alert alert-danger alert-dismissible fade show col-6 offset-3 mt-3"
+  class="flash-message fixed top-20 left-1/2 -translate-x-1/2 max-w-xl w-full mx-auto flex items-center justify-between rounded-lg bg-red-100 text-red-800 px-4 py-3 shadow z-50"
   role="alert"
 >
-  <%= error %>
+  <span><%= error %></span>
   <button
     type="button"
-    class="btn-close"
-    data-bs-dismiss="alert"
-    aria-label="Close"
-  ></button>
+    class="ml-3 text-red-700 hover:text-red-900 focus:outline-none"
+    onclick="this.parentElement.remove()"
+  >
+    ✕
+  </button>
 </div>
 <% } %>

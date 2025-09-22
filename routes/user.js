@@ -1,47 +1,28 @@
 const express = require("express");
 const router = express.Router();
 const User = require("../models/User.js");
+const wrapAsync = require("../utils/wrapAsync");
+const passport = require("passport");
+const { saveRediredtUrl } = require("../middleware.js");
 
-router.get("/register", (req, res) => {
-  res.render("user/register.ejs");
-});
+const userController = require("../controllers/user.js");
+router
+  .route("/register")
+  .get(userController.renderRegisterForm)
+  .post(wrapAsync(userController.registerUser));
 
-router.get("/login", (req, res) => {
-  res.render("user/login.ejs");
-});
+router
+  .route("/login")
+  .get(userController.renderLoginForm)
+  .post(
+    saveRediredtUrl,
+    passport.authenticate("local", {
+      failureRedirect: "/login",
+      failureFlash: true,
+    }),
+    wrapAsync(userController.loginUser)
+  );
 
-router.post("/register", async (req, res) => {
-  try {
-    let { username, email, password, confirmPassword, phone } = req.body;
-
-    if (password !== confirmPassword) {
-      return res.redirect("/register?error=password");
-    }
-
-    let newUser = new User({ username, email, password, phone });
-    await newUser.save();
-
-    return res.redirect("/?success=registered");
-  } catch (err) {
-    console.error(err);
-    return res.redirect("/");
-  }
-});
-
-router.post("/login", async (req, res) => {
-  try {
-    let { email, password } = req.body;
-    let user = await User.findOne({ email });
-
-    if (!user || user.password !== password) {
-      return res.redirect("/login?error=invalid");
-    }
-
-    return res.redirect("/");
-  } catch (err) {
-    console.error(err);
-    return res.redirect("/login?error=server");
-  }
-});
+router.route("/logout").get(userController.logoutUser);
 
 module.exports = router;

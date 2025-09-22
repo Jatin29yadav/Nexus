@@ -2,14 +2,8 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const messageSchema = new Schema({
-  name: {
-    type: Schema.Types.ObjectId,
-    ref: "User",
-  },
-  email: {
-    type: Schema.Types.ObjectId,
-    ref: "User",
-  },
+  name: String,
+  email: String,
   message: String,
   createdAt: {
     type: Date,

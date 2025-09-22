@@ -9,9 +9,8 @@ const session = require("express-session");
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
 const User = require("./models/User.js");
-const Tournament = require("./models/Tournament");
 
-let port = 3006;
+let port = 3005;
 
 const sessionOptions = {
   secret: "mysecretsessioncode",
@@ -43,6 +42,8 @@ app.use((req, res, next) => {
 
 const userRouter = require("./routes/user.js");
 const bookingRouter = require("./routes/booking.js");
+const messageRouter = require("./routes/message.js");
+const tournamentRouter = require("./routes/tournament.js");
 
 app.use(expressLayouts);
 app.set("layout", "layouts/boilerplate");
@@ -74,6 +75,8 @@ app.get("/", (req, res) => {
 
 app.use("/", userRouter);
 app.use("/", bookingRouter);
+app.use("/contact", messageRouter);
+app.use("/tournament", tournamentRouter);
 
 app.get("/payment", (req, res) => {
   res.render("pages/payment.ejs");
@@ -81,40 +84,6 @@ app.get("/payment", (req, res) => {
 
 app.get("/gallery", (req, res) => {
   res.render("pages/gallery.ejs");
-});
-
-app.get("/tournament", (req, res) => {
-  res.render("tournament/tournament.ejs");
-});
-
-app.post("/tournament", async (req, res) => {
-  try {
-    const { teamName, captainName, captainEmail, captainPhone, members } =
-      req.body;
-    const newTournament = new Tournament({
-      teamName,
-      captainName,
-      captainEmail,
-      captainPhone,
-      members,
-    });
-
-    await newTournament.save();
-    res.redirect("/tournament/list");
-  } catch (err) {
-    console.error("Tournament registration error:", err);
-    res.redirect("/tournament");
-  }
-});
-
-app.get("/tournament/list", async (req, res) => {
-  try {
-    const teams = await Tournament.find();
-    res.render("tournament/tournamentList.ejs", { teams });
-  } catch (err) {
-    console.error("Error fetching teams:", err);
-    res.redirect("/tournament?success=false");
-  }
 });
 
 //page not found
