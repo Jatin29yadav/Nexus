@@ -1,5 +1,3 @@
-// sampleUsers.js
-
 const sampleUsers = [
   {
     username: "gamerpro99",

@@ -1,3 +1,4 @@
+const axios = require("axios");
 const Booking = require("../models/Booking");
 
 module.exports.renderBookingFrom = (req, res) => {
@@ -6,45 +7,23 @@ module.exports.renderBookingFrom = (req, res) => {
 
 module.exports.booking = async (req, res) => {
   try {
-    const {
-      name,
-      email,
-      phone,
-      membersCount,
-      membersName,
-      bookingType,
-      bookingTime,
-    } = req.body;
+    // 🔗 Call internal API instead of duplicating booking logic
+    const baseURL = process.env.BASE_URL || "http://localhost:3005";
 
-    const memberList = membersName
-      ? membersName
-          .split(",")
-          .map((m) => m.trim())
-          .filter(Boolean)
-      : [];
+    const response = await axios.post(`${baseURL}/api/bookings`, req.body);
 
-    const booking = new Booking({
-      name,
-      email,
-      phone,
-      membersCount,
-      membersName: memberList,
-      bookingType,
-      bookingTime: {
-        start: bookingTime.start,
-        end: bookingTime.end,
-      },
-    });
+    // ✅ If API succeeded
+    if (response.data.success) {
+      req.flash("success", response.data.message || "🎮 Booking successful!");
+      return res.redirect("/bookings");
+    }
 
-    await booking.save();
-    req.flash(
-      "success",
-      "Your Booking is Received , you will be notified soon ..."
-    );
-    res.redirect("/bookings");
+    // ⚠️ If API failed but returned a message
+    req.flash("error", response.data.message || "Failed to create booking.");
+    res.redirect("/booking");
   } catch (error) {
-    console.error(error);
-    req.flash("error", "Something went wrong");
+    console.error("Booking error:", error.response?.data || error.message);
+    req.flash("error", "Something went wrong while booking!");
     res.redirect("/booking");
   }
 };
