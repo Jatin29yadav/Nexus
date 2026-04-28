@@ -1,0 +1,50 @@
+# 🚨 SECRETS & ENVIRONMENT VARIABLES
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+
+# 📦 DEPENDENCIES
+node_modules/
+/jspm_packages/
+lib-cov
+*.seed
+*.log
+package-lock.json (Optional: remove if you want to lock versions)
+
+# 🛠️ BUILD & PRODUCTION
+dist/
+build/
+out/
+.next/
+.serverless/
+.vercel
+.netlify
+
+# 🐞 DEBUG LOGS
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs
+*.log
+
+# 🖥️ IDE & SYSTEM FILES
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# 🧪 TESTING
+coverage/
+*.lcov
+
+# 📁 MISC
+.cache/
+.eslintcache
