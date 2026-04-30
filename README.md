@@ -12,6 +12,18 @@
 
 ---
 
+## 📚 Documentation
+
+Explore the new structured documentation:
+- [System Architecture](docs/architecture.md)
+- [Prerequisites & Installation](docs/installation.md)
+- [Environment Variables Guide](docs/env-variables.md)
+- [API Reference](docs/api-reference.md)
+- [Folder Structure](docs/folder-structure.md)
+- [Troubleshooting & FAQ](docs/troubleshooting.md)
+
+---
+
 ## 🏗️ Architecture & Security
 * **Custom Auth System:** We explicitly bypassed third-party providers to engineer a fully custom **JWT + Bcrypt** authentication system, ensuring absolute granular control over admin roles and protected routes.
 * **Relational Data Mapping:** Advanced MongoDB schemas mapping individual `Player IDs` -> `Squad IDs` -> `Tournament IDs`.
