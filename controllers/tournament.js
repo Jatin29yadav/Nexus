@@ -1,5 +1,18 @@
 const Tournament = require("../models/Tournament");
 
+// SEC-02: rosters (player names, in-game ids, phone numbers) and captain ids
+// are served to admins only. Everyone else gets what the public pages read.
+const forCaller = (tournament, user) => {
+  if (user && user.role === "Admin") return tournament;
+  const view = tournament.toObject();
+  view.registeredTeams = view.registeredTeams.map(({ _id, teamName, status }) => ({
+    _id,
+    teamName,
+    status,
+  }));
+  return view;
+};
+
 module.exports.createTournament = async (req, res) => {
   try {
     const { title, game, description, eventTime, maxTeams } = req.body;
@@ -29,7 +42,9 @@ module.exports.getTournamentById = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Tournament not found" });
     }
-    return res.status(200).json({ success: true, tournament });
+    return res
+      .status(200)
+      .json({ success: true, tournament: forCaller(tournament, req.user) });
   } catch (error) {
     return res
       .status(500)
@@ -40,7 +55,10 @@ module.exports.getTournamentById = async (req, res) => {
 module.exports.getAllTournaments = async (req, res) => {
   try {
     const tournaments = await Tournament.find().sort({ "eventTime.start": 1 });
-    return res.status(200).json({ success: true, tournaments });
+    return res.status(200).json({
+      success: true,
+      tournaments: tournaments.map((t) => forCaller(t, req.user)),
+    });
   } catch (error) {
     return res
       .status(500)

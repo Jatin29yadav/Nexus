@@ -30,6 +30,21 @@ module.exports.isLoggedIn = async (req, res, next) => {
   }
 };
 
+// For public routes whose response depends on who is asking. Never rejects:
+// a missing, invalid or expired cookie simply means "anonymous".
+module.exports.optionalAuth = async (req, res, next) => {
+  try {
+    const token = req.cookies.token;
+    if (token) {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      req.user = await User.findById(decoded.userId).select("-password");
+    }
+  } catch (error) {
+    req.user = null;
+  }
+  next();
+};
+
 module.exports.isAdmin = (req, res, next) => {
   if (req.user && req.user.role === "Admin") {
     next();

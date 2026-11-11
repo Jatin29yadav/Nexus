@@ -144,16 +144,19 @@ Tournament = {
   status: "Upcoming" | "Registration Open" | "Live" | "Completed" | "Cancelled",
   createdAt, updatedAt
 }
-Team   = { _id, teamName, captain: ObjectId, players: Player[], status: "Pending" | "Approved" | "Rejected", assignedPCs: ObjectId[] }
-Player = { _id, name, inGameId, phone }        // 5 or 6 per team
+Team       = { _id, teamName, captain: ObjectId, players: Player[], status: "Pending" | "Approved" | "Rejected", assignedPCs: ObjectId[] }   // admins only
+PublicTeam = { _id, teamName, status }         // everyone else (ML-001)
+Player     = { _id, name, inGameId, phone }    // 5 or 6 per team
 ```
 
+`registeredTeams` in the two GET responses below is `Team[]` when the request carries a valid admin cookie and `PublicTeam[]` otherwise (anonymous, non-admin, or invalid/expired cookie — the GETs never answer 401). Array length is unchanged, so team counts still work.
+
 #### `GET /api/tournaments` — Public
-- **200:** `{ success, tournaments: Tournament[] }` sorted by `eventTime.start`, **including full rosters with phone numbers** (SEC-02)
+- **200:** `{ success, tournaments: Tournament[] }` sorted by `eventTime.start`. Rosters only for admins (see above; SEC-02 fixed, ML-001)
 - **Errors:** 500 `"Error fetching tournaments"`
 
 #### `GET /api/tournaments/:tournamentId` — Public
-- **200:** `{ success, tournament: Tournament }` (same exposure)
+- **200:** `{ success, tournament: Tournament }` (same roster rule)
 - **Errors:** 404 `"Tournament not found"`; 500 `"Error fetching tournament details"`
 
 #### `POST /api/tournaments` — Admin

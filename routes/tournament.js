@@ -9,10 +9,10 @@ const {
   updateTeamStatus,
   deleteTournament,
 } = require("../controllers/tournament");
-const { isLoggedIn, isAdmin } = require("../middleware");
+const { isLoggedIn, isAdmin, optionalAuth } = require("../middleware");
 
-router.get("/", getAllTournaments);
-router.get("/:tournamentId", getTournamentById);
+router.get("/", optionalAuth, getAllTournaments);
+router.get("/:tournamentId", optionalAuth, getTournamentById);
 router.post("/", isLoggedIn, isAdmin, createTournament);
 router.post("/:tournamentId/register", isLoggedIn, registerTeam);
 router.put("/:tournamentId", isLoggedIn, isAdmin, updateTournament);

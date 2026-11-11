@@ -65,16 +65,60 @@ describe("SEC-02 public tournament endpoints expose player phone numbers", () =>
     });
   };
 
-  vuln("GET /api/tournaments (no auth) contains no phone numbers", async () => {
+  it("GET /api/tournaments (no auth) contains no phone numbers", async () => {
     await withTeam();
     const res = await api().get("/api/tournaments");
     expect(res.status).toBe(200);
     expect(JSON.stringify(res.body)).not.toContain("9000000000");
   });
 
-  vuln("GET /api/tournaments/:id (no auth) contains no phone numbers", async () => {
+  it("GET /api/tournaments/:id (no auth) contains no phone numbers", async () => {
     const t = await withTeam();
     const res = await api().get(`/api/tournaments/${t._id}`);
+    expect(res.status).toBe(200);
+    expect(JSON.stringify(res.body)).not.toContain("9000000000");
+  });
+});
+
+describe("SEC-02 rosters stay available to admins and hidden from everyone else", () => {
+  const withTeam = async () => {
+    const captain = await makeUser();
+    return makeTournament({
+      registeredTeams: [{ teamName: "Owls", captain: captain.user._id, players: players(5) }],
+    });
+  };
+
+  it("anonymous callers get only _id, teamName and status per team", async () => {
+    const t = await withTeam();
+    const res = await api().get(`/api/tournaments/${t._id}`);
+    expect(res.body.tournament.registeredTeams).toEqual([
+      { _id: t.registeredTeams[0]._id.toString(), teamName: "Owls", status: "Pending" },
+    ]);
+  });
+
+  it("a logged-in non-admin gets the same trimmed view", async () => {
+    await withTeam();
+    const { cookie } = await makeUser();
+    const res = await api().get("/api/tournaments").set("Cookie", cookie);
+    expect(Object.keys(res.body.tournaments[0].registeredTeams[0]).sort()).toEqual([
+      "_id",
+      "status",
+      "teamName",
+    ]);
+  });
+
+  it("an admin gets full rosters from both endpoints", async () => {
+    const t = await withTeam();
+    const { cookie } = await makeAdmin();
+    const list = await api().get("/api/tournaments").set("Cookie", cookie);
+    const one = await api().get(`/api/tournaments/${t._id}`).set("Cookie", cookie);
+    expect(list.body.tournaments[0].registeredTeams[0].players).toHaveLength(5);
+    expect(one.body.tournament.registeredTeams[0].players[0].phone).toBe("9000000000");
+  });
+
+  it("an invalid cookie is treated as anonymous, not as an error", async () => {
+    await withTeam();
+    const res = await api().get("/api/tournaments").set("Cookie", "token=garbage");
     expect(res.status).toBe(200);
     expect(JSON.stringify(res.body)).not.toContain("9000000000");
   });
