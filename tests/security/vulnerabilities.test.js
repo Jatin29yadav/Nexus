@@ -693,7 +693,7 @@ describe("SEC-15 seed scripts cannot wipe a production database", () => {
   });
 });
 
-describe("SEC-16 .env.test is not git-ignored", () => {
+describe("SEC-16 env files are git-ignored", () => {
   // Reads .gitignore directly (no git process needed). Covers the plain
   // file-name patterns this repo uses; `*` matches any run of characters.
   const ignoredByGitignore = (fileName) =>
@@ -711,8 +711,36 @@ describe("SEC-16 .env.test is not git-ignored", () => {
     expect(ignoredByGitignore(".env")).toBe(true);
   });
 
-  vuln(".gitignore covers .env.test", () => {
+  it(".gitignore covers .env.test", () => {
     expect(ignoredByGitignore(".env.test")).toBe(true);
+  });
+
+  it.each([".env.local", ".env.production", ".env.test.local"])("%s is ignored too", (name) => {
+    expect(ignoredByGitignore(name)).toBe(true);
+  });
+
+  it(".env.example is committed, lists every variable the code reads, and holds no values", () => {
+    const gitignore = fs.readFileSync(path.join(ROOT, ".gitignore"), "utf8");
+    expect(gitignore).toMatch(/^!\.env\.example$/m);
+
+    const example = fs.readFileSync(path.join(ROOT, ".env.example"), "utf8");
+    const assignments = example.split("\n").filter((line) => /^[A-Z_]+=/.test(line));
+    for (const line of assignments) expect(line).toMatch(/^[A-Z_]+=$/); // name only
+
+    // Every process.env.X read anywhere in the app must be documented.
+    const files = ["app.js", "server.js", "middleware.js", "seedStations.js"];
+    for (const dir of ["config", "utils", "controllers", "routes", "models", "init"]) {
+      for (const f of fs.readdirSync(path.join(ROOT, dir))) files.push(path.join(dir, f));
+    }
+    const used = new Set();
+    for (const file of files) {
+      const text = fs.readFileSync(path.join(ROOT, file), "utf8");
+      for (const [, name] of text.matchAll(/\benv\.([A-Z][A-Z0-9_]*)/g)) used.add(name);
+    }
+    used.delete("CLIENT_URL"); // deprecated alias of FRONTEND_URL, documented in a comment
+
+    const documented = assignments.map((line) => line.split("=")[0]);
+    expect([...used].filter((name) => !documented.includes(name))).toEqual([]);
   });
 });
 
