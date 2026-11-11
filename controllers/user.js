@@ -7,6 +7,16 @@ const bcrypt = require("bcryptjs");
 // bcrypt round as "wrong password" and cannot be told apart by timing.
 const DUMMY_HASH = bcrypt.hashSync("nexus-timing-equaliser", 10);
 
+// What login and register return. Includes `role` and `phone` so the client
+// knows straight away whether this is an admin (ML-011), without a reload.
+const sessionUser = (user) => ({
+  _id: user._id,
+  email: user.email,
+  username: user.username,
+  phone: user.phone,
+  role: user.role,
+});
+
 module.exports.registerUser = async (req, res) => {
   try {
     const { username, email, phone, password } = req.body;
@@ -29,7 +39,7 @@ module.exports.registerUser = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      user: { _id: user._id, email: user.email, username: user.username },
+      user: sessionUser(user),
     });
   } catch (error) {
     // SEC-12: fixed messages only; the original error stays in the server log.
@@ -84,7 +94,7 @@ module.exports.loginUser = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      user: { _id: user._id, email: user.email, username: user.username },
+      user: sessionUser(user),
     });
   } catch (error) {
     console.error("Login failed:", error.message);

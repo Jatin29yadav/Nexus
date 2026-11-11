@@ -73,12 +73,12 @@ In the tables below: **Public** = no middleware, **User** = `isLoggedIn`, **Admi
 
 #### `POST /api/users/register` — Public
 - **Body:** `{ username, email, password, phone? }` — validated, 400 + field message otherwise (ML-006): `username` 3–30 chars of letters, numbers, space, `_ . -`; `email` a valid address; `password` 8–128 chars; `phone` 7–20 digits/`+ - ( )`/spaces
-- **201:** `{ success, user: { _id, email, username } }` and sets the `token` cookie (the user is logged in)
+- **201:** `{ success, user: { _id, email, username, phone?, role } }` and sets the `token` cookie (the user is logged in) (ML-011)
 - **Errors:** 400 validation message; 422 `"User already exists with this email"` or `"Username is already taken"`; 500 `"Server error during registration"`. Raw database errors are never returned (ML-007)
 
 #### `POST /api/users/login` — Public
 - **Body:** `{ email: string, password: string }`
-- **200:** `{ success, user: { _id, email, username } }` and sets the `token` cookie. **Does not include `role` or `phone`.**
+- **200:** `{ success, user: { _id, email, username, phone?, role } }` and sets the `token` cookie (ML-011; `role` and `phone` were missing before — contract M-05)
 - **Errors:** 400 when `email`/`password` is missing or not a string (`"Email is required"`, `"Password is required"`; was 500); 401 `"Invalid Email or Password"`; 500 `"Server error during login"`
 
 #### `POST /api/users/logout` — Public

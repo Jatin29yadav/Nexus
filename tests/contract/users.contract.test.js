@@ -12,13 +12,13 @@ describe("POST /api/users/register", () => {
     password: PASSWORD,
   };
 
-  it("201: creates the user, returns { _id, email, username } and sets the auth cookie", async () => {
+  it("201: creates the user, returns { _id, email, username, phone, role } and sets the auth cookie", async () => {
     const res = await api().post("/api/users/register").send(body);
 
     expect(res.status).toBe(201);
     expect(keys(res.body)).toEqual(["success", "user"]);
     expect(res.body.success).toBe(true);
-    expect(keys(res.body.user)).toEqual(["_id", "email", "username"]);
+    expect(keys(res.body.user)).toEqual(["_id", "email", "phone", "role", "username"]);
     expect(res.body.user).toMatchObject({ email: body.email, username: body.username });
 
     const [cookie] = cookiesOf(res);
@@ -60,7 +60,7 @@ describe("POST /api/users/register", () => {
 });
 
 describe("POST /api/users/login", () => {
-  it("200: returns { _id, email, username } (no role, no phone) and sets the cookie", async () => {
+  it("200: returns { _id, email, username, phone, role } and sets the cookie (ML-011)", async () => {
     const { user, password } = await makeUser();
     const res = await api()
       .post("/api/users/login")
@@ -68,8 +68,10 @@ describe("POST /api/users/login", () => {
 
     expect(res.status).toBe(200);
     expect(keys(res.body)).toEqual(["success", "user"]);
-    expect(keys(res.body.user)).toEqual(["_id", "email", "username"]);
+    expect(keys(res.body.user)).toEqual(["_id", "email", "phone", "role", "username"]);
     expect(res.body.user._id).toBe(user._id.toString());
+    expect(res.body.user.role).toBe("User");
+    expect(res.body.user).not.toHaveProperty("password");
     expect(cookiesOf(res)[0]).toMatch(/^token=.+HttpOnly/i);
   });
 
