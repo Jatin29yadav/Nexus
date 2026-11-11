@@ -72,7 +72,7 @@ In the tables below: **Public** = no middleware, **User** = `isLoggedIn`, **Admi
 ### 1.1 Users — `Nexus/routes/user.js`, `Nexus/controllers/user.js`
 
 #### `POST /api/users/register` — Public
-- **Body:** `{ username: string, email: string, password: string, phone?: string }` — all must be bounded strings (400 otherwise, SEC-04)
+- **Body:** `{ username, email, password, phone? }` — validated, 400 + field message otherwise (ML-006): `username` 3–30 chars of letters, numbers, space, `_ . -`; `email` a valid address; `password` 8–128 chars; `phone` 7–20 digits/`+ - ( )`/spaces
 - **201:** `{ success, user: { _id, email, username } }` and sets the `token` cookie (the user is logged in)
 - **Errors:** 422 `"User already exists with this email"`; 400 with raw error text for anything else (duplicate username, missing field)
 

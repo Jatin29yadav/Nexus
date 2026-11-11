@@ -519,19 +519,42 @@ describe("SEC-10 a missing or weak JWT_SECRET is detected and never leaks librar
   });
 });
 
-describe("SEC-11 no password policy or input validation on register", () => {
-  vuln("a one-character password is rejected", async () => {
+describe("SEC-11 password policy and input validation on register", () => {
+  it("a one-character password is rejected", async () => {
     const res = await api()
       .post("/api/users/register")
       .send({ username: "weak", email: "weak@example.test", password: "1" });
     expect(res.status).toBe(400);
   });
 
-  vuln("a string that is not an email address is rejected", async () => {
+  it("a string that is not an email address is rejected", async () => {
     const res = await api()
       .post("/api/users/register")
       .send({ username: "noemail", email: "not-an-email", password: PASSWORD });
     expect(res.status).toBe(400);
+  });
+
+  it.each([
+    ["7-character password", { password: "Abc123!" }, "Password must be at least 8 characters"],
+    ["129-character password", { password: "a".repeat(129) }, "Password must be at most 128 characters"],
+    ["2-character username", { username: "ab" }, "Username must be at least 3 characters"],
+    ["username with markup", { username: "<script>" }, "Username can only contain letters, numbers, spaces, _ . and -"],
+    ["phone that is not a number", { phone: "call me" }, "Phone number is not valid"],
+    ["missing email", { email: undefined }, "Invalid email format"],
+  ])("%s is rejected with a clear message and no account", async (_label, overrides, message) => {
+    const res = await api()
+      .post("/api/users/register")
+      .send({ username: "valid_name", email: "valid@example.test", password: PASSWORD, ...overrides });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ success: false, message });
+    expect(await models.User.countDocuments()).toBe(0);
+  });
+
+  it("passwords are stored with bcrypt at cost 10 or higher", async () => {
+    const { user } = await makeUser();
+    const { password } = await models.User.findById(user._id).select("+password");
+    expect(Number(password.split("$")[2])).toBeGreaterThanOrEqual(10);
   });
 });
 

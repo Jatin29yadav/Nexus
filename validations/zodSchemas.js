@@ -30,11 +30,21 @@ const loginSchema = z.object({
   password: credential("Password", 128),
 });
 
+// SEC-11: registration policy. Login stays lenient on purpose so that accounts
+// created before this policy can still sign in.
 const registerSchema = z.object({
-  username: credential("Username", 30),
-  email: credential("Email", 254),
-  password: credential("Password", 128),
-  phone: z.string("Phone number is not valid").max(20, "Phone number is not valid").optional(),
+  username: z
+    .string("Username is required")
+    .trim()
+    .min(3, "Username must be at least 3 characters")
+    .max(30, "Username must be at most 30 characters")
+    .regex(/^[A-Za-z0-9 _.-]+$/, "Username can only contain letters, numbers, spaces, _ . and -"),
+  email: z.email("Invalid email format").max(254, "Email is too long"),
+  password: z
+    .string("Password is required")
+    .min(8, "Password must be at least 8 characters")
+    .max(128, "Password must be at most 128 characters"),
+  phone: phone.optional(),
 });
 
 // ── Bookings ────────────────────────────────────────────────────────────
