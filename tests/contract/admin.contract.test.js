@@ -84,7 +84,7 @@ describe("PUT /api/admin/station/:stationId", () => {
     expect(res.body).toEqual({ success: false, message: "Station not found" });
   });
 
-  it("500: the human stationId ('PC-01') or a bad status is a server error (current behaviour)", async () => {
+  it("400: the human stationId ('PC-01') or a bad status (SEC-21)", async () => {
     const [station] = await seedStations(["PC-01"]);
     const { cookie } = await makeAdmin();
 
@@ -97,10 +97,11 @@ describe("PUT /api/admin/station/:stationId", () => {
       .set("Cookie", cookie)
       .send({ status: "On Fire" });
 
-    for (const res of [byHumanId, badStatus]) {
-      expect(res.status).toBe(500);
-      expect(res.body).toEqual({ success: false, message: "Error updating station status" });
-    }
+    expect(byHumanId.status).toBe(400);
+    expect(byHumanId.body).toEqual({ success: false, message: "Invalid id." });
+    expect(badStatus.status).toBe(400);
+    expect(badStatus.body).toEqual({ success: false, message: "Invalid station status" });
+    expect((await models.Station.findById(station._id)).status).toBe("Available");
   });
 });
 

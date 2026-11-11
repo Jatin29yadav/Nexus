@@ -86,13 +86,10 @@ describe("GET /api/tournaments/:tournamentId", () => {
     expect(res.body).toEqual({ success: false, message: "Tournament not found" });
   });
 
-  it("500: malformed id is reported as a server error (current behaviour)", async () => {
+  it("400: malformed id (SEC-21)", async () => {
     const res = await api().get("/api/tournaments/not-an-id");
-    expect(res.status).toBe(500);
-    expect(res.body).toEqual({
-      success: false,
-      message: "Error fetching tournament details",
-    });
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ success: false, message: "Invalid id." });
   });
 });
 
@@ -131,13 +128,14 @@ describe("POST /api/tournaments", () => {
     expect(res.body.tournament.maxTeams).toBe(12);
   });
 
-  it("500: missing title is reported as a server error (current behaviour)", async () => {
+  it("400: missing title (SEC-21)", async () => {
     const { cookie } = await makeAdmin();
     const { title, ...body } = createBody;
     const res = await api().post("/api/tournaments").set("Cookie", cookie).send(body);
 
-    expect(res.status).toBe(500);
-    expect(res.body).toEqual({ success: false, message: "Error creating tournament" });
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ success: false, message: "Title is required" });
+    expect(await models.Tournament.countDocuments()).toBe(0);
   });
 });
 
@@ -424,7 +422,7 @@ describe("PUT /api/tournaments/:tournamentId/team/:teamId/status", () => {
     expect((await models.Tournament.findById(t._id)).registeredTeams).toHaveLength(0);
   });
 
-  it("500: unknown status value is reported as a server error (current behaviour)", async () => {
+  it("400: unknown status value (SEC-21)", async () => {
     const { t, teamId } = await tournamentWithTeam();
     const { cookie } = await makeAdmin();
     const res = await api()
@@ -432,7 +430,7 @@ describe("PUT /api/tournaments/:tournamentId/team/:teamId/status", () => {
       .set("Cookie", cookie)
       .send({ status: "Banned" });
 
-    expect(res.status).toBe(500);
-    expect(res.body).toEqual({ success: false, message: "Failed to process squad." });
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ success: false, message: "Invalid team status" });
   });
 });

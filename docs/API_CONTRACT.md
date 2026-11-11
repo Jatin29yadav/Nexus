@@ -37,6 +37,10 @@ Per client IP; over the limit → **429** `{ success: false, message: "Too many 
 | `POST /users/register` | 10 / hour |
 | `POST /messages` | 10 / hour |
 
+### Ids and validation (ML-012)
+
+A route parameter that is not a 24-character hex ObjectId → **400** `"Invalid id."` on every route (was a 500 with the route's generic error text). Bodies are validated with Zod on every route that takes one; a violation → **400** with a message naming the field. Unknown body keys are dropped.
+
 ### Operator keys
 
 Any JSON body containing a key that starts with `$` or contains `.` (at any depth) is refused with 400 `"Invalid request."` before it reaches a route (SEC-04).

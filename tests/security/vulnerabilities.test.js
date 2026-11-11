@@ -913,18 +913,18 @@ describe("SEC-18 team registration respects tournament state and capacity", () =
   });
 });
 
-describe("SEC-21 malformed ids and bad enum values return 500", () => {
-  vuln("a malformed booking id is a 400", async () => {
+describe("SEC-21 malformed ids and bad enum values return 400", () => {
+  it("a malformed booking id is a 400", async () => {
     const { cookie } = await makeUser();
     const res = await api().get("/api/bookings/not-an-id").set("Cookie", cookie);
     expect(res.status).toBe(400);
   });
 
-  vuln("a malformed tournament id is a 400", async () => {
+  it("a malformed tournament id is a 400", async () => {
     expect((await api().get("/api/tournaments/not-an-id")).status).toBe(400);
   });
 
-  vuln("an invalid station status is a 400", async () => {
+  it("an invalid station status is a 400", async () => {
     const [station] = await seedStations(["PC-01"]);
     const { cookie } = await makeAdmin();
     const res = await api()
@@ -932,6 +932,32 @@ describe("SEC-21 malformed ids and bad enum values return 500", () => {
       .set("Cookie", cookie)
       .send({ status: "On Fire" });
     expect(res.status).toBe(400);
+  });
+
+  it("every route with an id parameter answers 400 to a malformed one", async () => {
+    const { cookie } = await makeAdmin();
+    const good = "65f000000000000000000001";
+    const routes = [
+      ["get", "/api/bookings/xyz"],
+      ["put", "/api/bookings/xyz"],
+      ["delete", "/api/bookings/xyz"],
+      ["get", "/api/tournaments/xyz"],
+      ["put", "/api/tournaments/xyz"],
+      ["delete", "/api/tournaments/xyz"],
+      ["post", "/api/tournaments/xyz/register"],
+      ["put", `/api/tournaments/xyz/team/${good}/status`],
+      ["put", `/api/tournaments/${good}/team/xyz/status`],
+      ["put", "/api/messages/xyz/read"],
+      ["delete", "/api/messages/xyz"],
+      ["put", "/api/admin/station/xyz"],
+      ["put", "/api/admin/booking/xyz/cancel"],
+      ["get", "/api/bookings/65f00000000000000000000g"], // right length, not hex
+    ];
+    for (const [method, url] of routes) {
+      const res = await api()[method](url).set("Cookie", cookie);
+      expect([method, url, res.status]).toEqual([method, url, 400]);
+      expect(res.body).toEqual({ success: false, message: "Invalid id." });
+    }
   });
 });
 

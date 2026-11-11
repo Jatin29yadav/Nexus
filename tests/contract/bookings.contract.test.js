@@ -253,11 +253,11 @@ describe("GET /api/bookings/:bookingId", () => {
     expect(res.body).toEqual({ success: false, message: "Forbidden Access." });
   });
 
-  it("500: malformed id is reported as a server error (current behaviour)", async () => {
+  it("400: malformed id (SEC-21)", async () => {
     const { cookie } = await makeUser();
     const res = await api().get("/api/bookings/not-an-id").set("Cookie", cookie);
-    expect(res.status).toBe(500);
-    expect(res.body).toEqual({ success: false, message: "Error." });
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ success: false, message: "Invalid id." });
   });
 });
 

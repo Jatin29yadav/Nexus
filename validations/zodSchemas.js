@@ -79,13 +79,13 @@ const updateBookingSchema = z.object({
   bookingTime: timeWindow.optional(),
 });
 
-const stationSchema = z.object({
-  stationId: z.string().trim().min(3).max(10),
-  type: z.enum(["PC", "Console"]),
-  status: z
-    .enum(["Available", "Occupied", "Maintenance", "Offline"])
-    .default("Available"),
-  installedGames: z.array(z.string()).optional(),
+// ── Admin actions ───────────────────────────────────────────────────────
+const stationStatusSchema = z.object({
+  status: z.enum(["Available", "Occupied", "Maintenance", "Offline"], "Invalid station status"),
+});
+
+const teamStatusSchema = z.object({
+  status: z.enum(["Pending", "Approved", "Rejected"], "Invalid team status"),
 });
 
 // A player's `email` is sent by the form but not stored (contract M-08): stripped.
@@ -116,7 +116,13 @@ const eventWindow = z
   .refine((t) => new Date(t.end) > new Date(t.start), "End time must be after start time");
 
 const text = (label, max) =>
-  z.string(`${label} must be text`).trim().max(max, `${label} is too long`);
+  z
+    .string({
+      error: (issue) =>
+        issue.input === undefined ? `${label} is required` : `${label} must be text`,
+    })
+    .trim()
+    .max(max, `${label} is too long`);
 
 const tournamentFields = {
   title: text("Title", 120).min(1, "Title is required"),
@@ -163,7 +169,8 @@ module.exports = {
   registerSchema,
   bookingSchema,
   updateBookingSchema,
-  stationSchema,
+  stationStatusSchema,
+  teamStatusSchema,
   playerValidation,
   teamRegistrationSchema,
   createTournamentSchema,

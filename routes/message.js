@@ -3,6 +3,9 @@ const router = express.Router();
 const messageController = require("../controllers/message");
 const { isLoggedIn, isAdmin } = require("../middleware");
 const { contactLimiter } = require("../config/rateLimits");
+const validateObjectId = require("../utils/validateObjectId");
+
+router.param("id", validateObjectId);
 
 router.post("/", contactLimiter, messageController.contactMessage);
 
