@@ -460,7 +460,7 @@ Each step is small enough for its own branch and commit(s). Contract-affecting s
 
 ## Phase 3 — security fixes (2026-11-11, branch `fix/security` in both repos)
 
-One commit per finding, each with the full suite green. Backend: 302 tests pass, 1 expected-fail (SEC-09 revocation). Frontend: 100 unit tests pass. `npm audit` reports 0 vulnerabilities in both packages. API changes are logged in `docs/MIGRATION_LOG.md` (ML-001 … ML-014).
+One commit per finding, each with the full suite green. Backend: 310 tests pass, no expected-fail left. Frontend: 100 unit tests pass. `npm audit` reports 0 vulnerabilities in both packages. API changes are logged in `docs/MIGRATION_LOG.md` (ML-001 … ML-015).
 
 Tests live in `Nexus/tests/security/vulnerabilities.test.js` unless another file is named.
 
@@ -474,7 +474,7 @@ Tests live in `Nexus/tests/security/vulnerabilities.test.js` unless another file
 | SEC-06 | Fixed (ML-005) | `SEC-06 rate limiting` |
 | SEC-07 | Fixed | `SEC-07 known-vulnerable dependency versions are installed`, `SEC-07 unused packages stay out of the manifest` |
 | SEC-08 | Fixed | `SEC-08 security headers` |
-| SEC-09 | **Partly fixed / deferred** — algorithm pinned to HS256 with explicit expiry; revoking a token on logout needs a `tokenVersion` field on `User` (schema change, awaiting approval) | Fixed part: `token verification` → `tests/security/auth.test.js` (`SEC-09: …`). Deferred part: `SEC-09 logout does not invalidate the token` (still expected-fail) |
+| SEC-09 | Fixed (ML-015): HS256 pinned with explicit expiry; logout revokes every earlier token of that user via `User.tokenVersion` (schema change approved 2026-11-11). Not added: a refresh-token flow or shorter lifetime (tokens still last 7 days unless the user logs out) | `SEC-09 logout invalidates the token`; `token verification` (`SEC-09: …`) → `tests/security/auth.test.js` |
 | SEC-10 | Fixed | `SEC-10 a missing or weak JWT_SECRET is detected and never leaks library internals` |
 | SEC-11 | Fixed (ML-006) | `SEC-11 password policy and input validation on register` |
 | SEC-12 | Fixed (ML-007). Residual: the 422 for an already-registered email still confirms that the email exists; removing that needs an email-verification flow | `SEC-12 register never returns raw database error text` |

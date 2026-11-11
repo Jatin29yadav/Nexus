@@ -2,6 +2,7 @@ const User = require("../models/User");
 const { signAuthToken } = require("../utils/authToken");
 const { setAuthCookie, clearAuthCookie } = require("../utils/authCookie");
 const bcrypt = require("bcryptjs");
+const { userForToken } = require("../middleware");
 
 // Compared against when the email is unknown, so "no such user" costs the same
 // bcrypt round as "wrong password" and cannot be told apart by timing.
@@ -35,7 +36,7 @@ module.exports.registerUser = async (req, res) => {
     signAuthToken(user._id); // throws on a missing secret, before anything is stored
     await user.save();
 
-    setAuthCookie(res, user._id);
+    setAuthCookie(res, user);
 
     return res.status(201).json({
       success: true,
@@ -71,7 +72,7 @@ module.exports.loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email }).select("+password");
+    const user = await User.findOne({ email }).select("+password +tokenVersion");
 
     if (!user) {
       await bcrypt.compare(password, DUMMY_HASH);
@@ -90,7 +91,7 @@ module.exports.loginUser = async (req, res) => {
       });
     }
 
-    setAuthCookie(res, user._id);
+    setAuthCookie(res, user);
 
     return res.status(200).json({
       success: true,
@@ -105,7 +106,19 @@ module.exports.loginUser = async (req, res) => {
   }
 };
 
-module.exports.logoutUser = (req, res) => {
+module.exports.logoutUser = async (req, res) => {
+  // SEC-09: revoke server-side, not just in this browser. Bumping tokenVersion
+  // invalidates every token issued to this user so far (all devices). Logout
+  // itself always succeeds, with or without a valid token.
+  try {
+    const user = req.cookies.token ? await userForToken(req.cookies.token) : null;
+    if (user) {
+      await User.updateOne({ _id: user._id }, { $inc: { tokenVersion: 1 } });
+    }
+  } catch (error) {
+    // Invalid, expired or already revoked token: nothing left to revoke.
+  }
+
   clearAuthCookie(res);
   return res.status(200).json({
     success: true,

@@ -1,6 +1,20 @@
 const { verifyAuthToken } = require("./utils/authToken");
 const User = require("./models/User");
 
+// Resolves a token to its user, or null when the user no longer exists.
+// Throws when the token is invalid, expired, or revoked: a token is only good
+// while its `tv` equals the user's current tokenVersion (SEC-09). Tokens
+// issued before tokenVersion existed carry no `tv` and count as version 0.
+const userForToken = async (token) => {
+  const decoded = verifyAuthToken(token);
+  const user = await User.findById(decoded.userId).select("-password +tokenVersion");
+  if (user && (decoded.tv || 0) !== (user.tokenVersion || 0)) {
+    throw new Error("token revoked");
+  }
+  return user;
+};
+module.exports.userForToken = userForToken;
+
 module.exports.isLoggedIn = async (req, res, next) => {
   try {
     const token = req.cookies.token;
@@ -11,9 +25,7 @@ module.exports.isLoggedIn = async (req, res, next) => {
         .json({ success: false, message: "No token provided." });
     }
 
-    const decoded = verifyAuthToken(token);
-
-    req.user = await User.findById(decoded.userId).select("-password");
+    req.user = await userForToken(token);
 
     if (!req.user) {
       return res
@@ -36,8 +48,7 @@ module.exports.optionalAuth = async (req, res, next) => {
   try {
     const token = req.cookies.token;
     if (token) {
-      const decoded = verifyAuthToken(token);
-      req.user = await User.findById(decoded.userId).select("-password");
+      req.user = await userForToken(token);
     }
   } catch (error) {
     req.user = null;

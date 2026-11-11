@@ -12,7 +12,7 @@
 | Base path | `/api` (frontend base URL = `VITE_API_BASE_URL`, must include `/api`; falls back to `http://localhost:3005/api`) |
 | Request body | JSON only (`Content-Type: application/json`). Any other body type on POST/PUT/DELETE → **415** `"Content-Type must be application/json."` (ML-004) |
 | Origin check | On POST/PUT/DELETE, an `Origin` header that is not an allowed frontend origin → **403** `"Origin not allowed."` Requests without `Origin` (non-browser clients) pass (ML-004) |
-| Auth | httpOnly cookie `token` containing a JWT `{ userId }`, HS256, 7 days. **No `Authorization` header support.** The browser must send credentials (`withCredentials: true`) |
+| Auth | httpOnly cookie `token` containing a JWT `{ userId, tv }`, HS256, 7 days. `tv` is the user's `tokenVersion` when the token was issued; a token whose `tv` no longer matches is rejected with 401 `"Invalid or expired token."` (ML-015). **No `Authorization` header support.** The browser must send credentials (`withCredentials: true`) |
 | Cookie flags | `httpOnly`, `path=/`, `maxAge` 7 days (same as the JWT), no `domain`. Production: `Secure; SameSite=None` (or `SameSite=<COOKIE_SAMESITE>` when that env var is `lax`/`strict`). Elsewhere: `SameSite=Lax`, not `Secure`. Login, register and logout share one definition (ML-008) |
 | Roles | `"User"` (default) and `"Admin"` on `User.role` |
 | Ids | MongoDB ObjectId strings. Stations are also addressed by `stationId` such as `"PC-01"`, `"C-05"` |
@@ -95,7 +95,7 @@ In the tables below: **Public** = no middleware, **User** = `isLoggedIn`, **Admi
 
 #### `POST /api/users/logout` — Public
 - **Body:** none
-- **200:** `{ success, message: "Logged out successfully." }`; overwrites the cookie with an expired one. The JWT itself stays valid (SEC-09).
+- **200:** `{ success, message: "Logged out successfully." }`; overwrites the cookie with an expired one **and revokes the token server-side** (ML-015): the user's `tokenVersion` is incremented, so every token issued to that user before this call — on any device — answers 401 from now on. Always 200, also without a cookie or with an invalid one.
 
 #### `GET /api/users/profile` — User
 - **200:** `{ success, user: { _id, email, username, phone?, role, wishlist: string[], bookings: [], createdAt, updatedAt } }` (password excluded). `bookings` is always empty today (QUAL-11).

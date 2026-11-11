@@ -118,7 +118,8 @@ describe("token verification", () => {
 
     expect(header.alg).toBe("HS256");
     expect(payload.exp - payload.iat).toBe(7 * 24 * 60 * 60);
-    expect(Object.keys(payload).sort()).toEqual(["exp", "iat", "userId"]);
+    expect(Object.keys(payload).sort()).toEqual(["exp", "iat", "tv", "userId"]);
+    expect(payload.tv).toBe(0);
   });
 
   it("rejects garbage", async () => {

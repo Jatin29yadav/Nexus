@@ -29,8 +29,8 @@ const cookieOptions = () => {
 };
 
 // The cookie lives exactly as long as the JWT inside it.
-const setAuthCookie = (res, userId) => {
-  res.cookie(COOKIE_NAME, signAuthToken(userId), {
+const setAuthCookie = (res, user) => {
+  res.cookie(COOKIE_NAME, signAuthToken(user._id, user.tokenVersion || 0), {
     ...cookieOptions(),
     maxAge: TOKEN_TTL_SECONDS * 1000,
   });

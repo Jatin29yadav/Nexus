@@ -31,6 +31,15 @@ const userSchema = mongoose.Schema(
       default: "User", // Naya banda hamesha User banega
     },
 
+    // SEC-09: every auth token carries the version it was issued under. Logout
+    // increments this, which invalidates all tokens issued before it.
+    // Never returned by queries unless explicitly selected.
+    tokenVersion: {
+      type: Number,
+      default: 0,
+      select: false,
+    },
+
     // 2. Wishlist for storing favorite PCs (e.g., ["PC-05", "C-02"])
     wishlist: [
       {

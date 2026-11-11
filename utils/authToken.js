@@ -14,8 +14,9 @@ const secret = () => {
   return process.env.JWT_SECRET;
 };
 
-const signAuthToken = (userId) =>
-  jwt.sign({ userId }, secret(), {
+// `tv` is the user's tokenVersion at issue time (SEC-09 revocation).
+const signAuthToken = (userId, tokenVersion = 0) =>
+  jwt.sign({ userId, tv: tokenVersion }, secret(), {
     algorithm: ALGORITHM,
     expiresIn: TOKEN_TTL_SECONDS,
   });

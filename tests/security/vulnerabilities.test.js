@@ -445,20 +445,93 @@ describe("SEC-08 security headers", () => {
   });
 });
 
-// SEC-09 is only PARTLY fixed: the algorithm is pinned (see auth.test.js).
-// Revoking a token on logout needs server-side state (a tokenVersion field on
-// User, i.e. a schema change) and is deferred until that is approved.
-describe("SEC-09 logout does not invalidate the token", () => {
-  vuln("a token captured before logout stops working after logout", async () => {
+describe("SEC-09 logout invalidates the token", () => {
+  const login = async (user, password) => {
+    const res = await api().post("/api/users/login").send({ email: user.email, password });
+    return res.headers["set-cookie"][0].split(";")[0];
+  };
+  const profile = (cookie) => api().get("/api/users/profile").set("Cookie", cookie);
+
+  it("a token captured before logout stops working after logout", async () => {
     const { user, password } = await makeUser();
-    const login = await api().post("/api/users/login").send({ email: user.email, password });
-    const stolen = login.headers["set-cookie"][0].split(";")[0];
-    expect((await api().get("/api/users/profile").set("Cookie", stolen)).status).toBe(200);
+    const stolen = await login(user, password);
+    expect((await profile(stolen)).status).toBe(200);
 
     await api().post("/api/users/logout").set("Cookie", stolen);
 
-    const after = await api().get("/api/users/profile").set("Cookie", stolen);
+    const after = await profile(stolen);
     expect(after.status).toBe(401);
+    expect(after.body).toEqual({ success: false, message: "Invalid or expired token." });
+  });
+
+  it("logout revokes every session of that user, and a new login works again", async () => {
+    const { user, password } = await makeUser();
+    const laptop = await login(user, password);
+    const phone = await login(user, password);
+
+    await api().post("/api/users/logout").set("Cookie", laptop);
+
+    expect((await profile(phone)).status).toBe(401);
+    const fresh = await login(user, password);
+    expect((await profile(fresh)).status).toBe(200);
+  });
+
+  it("one user's logout does not touch anyone else's session", async () => {
+    const alice = await makeUser();
+    const bob = await makeUser();
+    await api().post("/api/users/logout").set("Cookie", alice.cookie);
+
+    expect((await profile(alice.cookie)).status).toBe(401);
+    expect((await profile(bob.cookie)).status).toBe(200);
+  });
+
+  it("a revoked token cannot be used to revoke the new session (replayed logout)", async () => {
+    const { user, password } = await makeUser();
+    const old = await login(user, password);
+    await api().post("/api/users/logout").set("Cookie", old);
+    const fresh = await login(user, password);
+
+    const replay = await api().post("/api/users/logout").set("Cookie", old);
+
+    expect(replay.status).toBe(200);
+    expect((await profile(fresh)).status).toBe(200);
+  });
+
+  it("a revoked admin token loses admin routes and the admin view of rosters", async () => {
+    const admin = await makeAdmin();
+    const captain = await makeUser();
+    await makeTournament({
+      registeredTeams: [{ teamName: "Owls", captain: captain.user._id, players: players(5) }],
+    });
+    await api().post("/api/users/logout").set("Cookie", admin.cookie);
+
+    expect((await api().get("/api/admin/dashboard").set("Cookie", admin.cookie)).status).toBe(401);
+    const list = await api().get("/api/tournaments").set("Cookie", admin.cookie);
+    expect(list.status).toBe(200);
+    expect(JSON.stringify(list.body)).not.toContain("9000000000");
+  });
+
+  it("logout still answers 200 with no cookie or a garbage cookie", async () => {
+    expect((await api().post("/api/users/logout")).status).toBe(200);
+    expect((await api().post("/api/users/logout").set("Cookie", "token=garbage")).status).toBe(200);
+  });
+
+  it("tokens issued before tokenVersion existed (no tv claim) keep working until logout", async () => {
+    const legacy = await makeUser(); // helper signs { userId } only
+    await models.User.collection.updateOne({ _id: legacy.user._id }, { $unset: { tokenVersion: "" } });
+
+    expect((await profile(legacy.cookie)).status).toBe(200);
+    await api().post("/api/users/logout").set("Cookie", legacy.cookie);
+    expect((await profile(legacy.cookie)).status).toBe(401);
+  });
+
+  it("tokenVersion is never sent to the client", async () => {
+    const { user, password } = await makeUser();
+    const res = await api().post("/api/users/login").send({ email: user.email, password });
+    const me = await profile(res.headers["set-cookie"][0].split(";")[0]);
+
+    expect(res.body.user).not.toHaveProperty("tokenVersion");
+    expect(me.body.user).not.toHaveProperty("tokenVersion");
   });
 });
 
