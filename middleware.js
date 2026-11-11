@@ -1,4 +1,4 @@
-const jwt = require("jsonwebtoken");
+const { verifyAuthToken } = require("./utils/authToken");
 const User = require("./models/User");
 
 module.exports.isLoggedIn = async (req, res, next) => {
@@ -11,7 +11,7 @@ module.exports.isLoggedIn = async (req, res, next) => {
         .json({ success: false, message: "No token provided." });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = verifyAuthToken(token);
 
     req.user = await User.findById(decoded.userId).select("-password");
 
@@ -36,7 +36,7 @@ module.exports.optionalAuth = async (req, res, next) => {
   try {
     const token = req.cookies.token;
     if (token) {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const decoded = verifyAuthToken(token);
       req.user = await User.findById(decoded.userId).select("-password");
     }
   } catch (error) {

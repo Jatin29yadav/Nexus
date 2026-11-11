@@ -445,6 +445,9 @@ describe("SEC-08 security headers", () => {
   });
 });
 
+// SEC-09 is only PARTLY fixed: the algorithm is pinned (see auth.test.js).
+// Revoking a token on logout needs server-side state (a tokenVersion field on
+// User, i.e. a schema change) and is deferred until that is approved.
 describe("SEC-09 logout does not invalidate the token", () => {
   vuln("a token captured before logout stops working after logout", async () => {
     const { user, password } = await makeUser();

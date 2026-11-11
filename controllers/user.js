@@ -1,5 +1,5 @@
 const User = require("../models/User");
-const jwt = require("jsonwebtoken");
+const { signAuthToken } = require("../utils/authToken");
 const bcrypt = require("bcryptjs");
 
 // Compared against when the email is unknown, so "no such user" costs the same
@@ -21,9 +21,7 @@ module.exports.registerUser = async (req, res) => {
 
     const user = await User.create({ email, username, phone, password });
 
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
-    });
+    const token = signAuthToken(user._id);
 
     res.cookie("token", token, {
       httpOnly: true,
@@ -63,9 +61,7 @@ module.exports.loginUser = async (req, res) => {
       });
     }
 
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
-    });
+    const token = signAuthToken(user._id);
 
     res.cookie("token", token, {
       httpOnly: true,

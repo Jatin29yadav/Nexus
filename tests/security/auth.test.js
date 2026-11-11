@@ -99,6 +99,28 @@ describe("token verification", () => {
     expect(res.body).toEqual(rejected);
   });
 
+  it("SEC-09: rejects a correctly signed token that uses another algorithm", async () => {
+    const { user } = await makeUser();
+    const hs512 = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+      algorithm: "HS512",
+      expiresIn: "7d",
+    });
+    const res = await profile(hs512);
+    expect(res.status).toBe(401);
+    expect(res.body).toEqual(rejected);
+  });
+
+  it("SEC-09: issued tokens are HS256 and expire after exactly 7 days", async () => {
+    const { user, password } = await makeUser();
+    const login = await api().post("/api/users/login").send({ email: user.email, password });
+    const token = login.headers["set-cookie"][0].split(";")[0].replace("token=", "");
+    const { header, payload } = jwt.decode(token, { complete: true });
+
+    expect(header.alg).toBe("HS256");
+    expect(payload.exp - payload.iat).toBe(7 * 24 * 60 * 60);
+    expect(Object.keys(payload).sort()).toEqual(["exp", "iat", "userId"]);
+  });
+
   it("rejects garbage", async () => {
     const res = await profile("not-a-jwt");
     expect(res.status).toBe(401);
