@@ -26,6 +26,17 @@
 
 The payload key differs per endpoint (`user`, `booking`, `bookings`, `tournament`, `tournaments`, `team`, `station`, `stations`, `messages`, `wishlist`, `data`).
 
+### Rate limits (ML-005)
+
+Per client IP; over the limit → **429** `{ success: false, message: "Too many …" }` with `RateLimit` / `Retry-After` headers.
+
+| Scope | Limit |
+|---|---|
+| All `/api/*` | 600 requests / 15 min |
+| `POST /users/login` | 10 **failed** attempts / 15 min |
+| `POST /users/register` | 10 / hour |
+| `POST /messages` | 10 / hour |
+
 ### Operator keys
 
 Any JSON body containing a key that starts with `$` or contains `.` (at any depth) is refused with 400 `"Invalid request."` before it reaches a route (SEC-04).

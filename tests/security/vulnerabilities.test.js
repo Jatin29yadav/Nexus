@@ -314,8 +314,10 @@ describe("SEC-05 cross-site request forgery", () => {
   });
 });
 
-describe("SEC-06 no rate limiting", () => {
-  vuln("repeated failed logins are throttled", async () => {
+describe("SEC-06 rate limiting", () => {
+  const LIMITED = { success: false, message: expect.stringMatching(/^Too many/) };
+
+  it("repeated failed logins are throttled", async () => {
     const { user } = await makeUser();
     const statuses = [];
     for (let i = 0; i < 30; i += 1) {
@@ -324,10 +326,42 @@ describe("SEC-06 no rate limiting", () => {
         .send({ email: user.email, password: `guess-${i}` });
       statuses.push(res.status);
     }
-    expect(statuses).toContain(429);
+    expect(statuses.slice(0, 10)).toEqual(Array(10).fill(401));
+    expect(statuses.slice(10)).toEqual(Array(20).fill(429));
   });
 
-  vuln("the public contact form is throttled", async () => {
+  it("once throttled, even the correct password is refused until the window ends", async () => {
+    const { user, password } = await makeUser();
+    for (let i = 0; i < 10; i += 1) {
+      await api().post("/api/users/login").send({ email: user.email, password: "wrong" });
+    }
+    const res = await api().post("/api/users/login").send({ email: user.email, password });
+    expect(res.status).toBe(429);
+    expect(res.body).toEqual(LIMITED);
+    expect(res.headers["set-cookie"]).toBeUndefined();
+  });
+
+  it("successful logins do not use up the allowance", async () => {
+    const { user, password } = await makeUser();
+    for (let i = 0; i < 15; i += 1) {
+      const res = await api().post("/api/users/login").send({ email: user.email, password });
+      expect(res.status).toBe(200);
+    }
+  });
+
+  it("account creation is throttled", async () => {
+    const statuses = [];
+    for (let i = 0; i < 12; i += 1) {
+      const res = await api()
+        .post("/api/users/register")
+        .send({ username: `bulk${i}`, email: `bulk${i}@example.test`, password: PASSWORD });
+      statuses.push(res.status);
+    }
+    expect(statuses.filter((s) => s === 201)).toHaveLength(10);
+    expect(statuses.slice(10)).toEqual([429, 429]);
+  });
+
+  it("the public contact form is throttled", async () => {
     const statuses = [];
     for (let i = 0; i < 60; i += 1) {
       const res = await api()
@@ -336,6 +370,12 @@ describe("SEC-06 no rate limiting", () => {
       statuses.push(res.status);
     }
     expect(statuses).toContain(429);
+    expect(await models.Message.countDocuments()).toBe(10);
+  });
+
+  it("limits are announced with RateLimit headers and a JSON 429", async () => {
+    const res = await api().get("/api/stations");
+    expect(res.headers["ratelimit"]).toMatch(/limit=600/);
   });
 });
 

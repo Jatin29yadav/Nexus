@@ -7,6 +7,7 @@ const mongoose = require("mongoose");
 const rejectOperators = require("./utils/rejectOperators.js");
 const csrfGuard = require("./utils/csrfGuard.js");
 const { allowedOrigins } = require("./config/origins.js");
+const { apiLimiter } = require("./config/rateLimits.js");
 const ExpressError = require("./utils/expressError.js");
 
 const userRouter = require("./routes/user.js");
@@ -15,6 +16,17 @@ const tournamentRouter = require("./routes/tournament.js");
 const bookingRouter = require("./routes/booking.js");
 const adminRouter = require("./routes/admin.js");
 const stationRouter = require("./routes/station.js");
+
+// Behind Render's proxy (and later Vercel's /api rewrite) the client address is
+// in X-Forwarded-For. TRUST_PROXY = number of proxy hops in front of the app;
+// defaults to 1 in production and off elsewhere. Rate limiting keys on req.ip.
+const trustProxy =
+  process.env.TRUST_PROXY !== undefined
+    ? Number(process.env.TRUST_PROXY) || 0
+    : process.env.NODE_ENV === "production"
+      ? 1
+      : 0;
+if (trustProxy > 0) app.set("trust proxy", trustProxy);
 
 // SEC-04: object values in query filters are wrapped in $eq unless the code
 // marks them with mongoose.trusted(), so user input can never act as an operator.
@@ -27,6 +39,7 @@ app.use(
   }),
 );
 
+app.use("/api", apiLimiter);
 app.use(csrfGuard);
 // JSON only: form-encoded bodies are not parsed (SEC-05).
 app.use(express.json());

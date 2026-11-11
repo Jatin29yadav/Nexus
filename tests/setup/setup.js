@@ -32,6 +32,8 @@ beforeAll(async () => {
 beforeEach(async () => {
   const { collections } = mongoose.connection;
   await Promise.all(Object.values(collections).map((c) => c.deleteMany({})));
+  // Rate-limit counters are per process; every test starts from zero.
+  await require("../../config/rateLimits").resetAll();
 });
 
 afterAll(async () => {
