@@ -1,7 +1,8 @@
+// Sample users for LOCAL DEVELOPMENT only. No passwords live in this file
+// (SEC-15): init/index.js assigns one at seed time.
 const sampleUsers = [
   {
     username: "gamerpro99",
-    password: "hashedpassword123",
     phone: "9876543210",
     email: "gamerpro99@example.com",
     role: "User",
@@ -10,7 +11,6 @@ const sampleUsers = [
   },
   {
     username: "shadowhunter",
-    password: "hashedpassword456",
     phone: "9123456780",
     email: "shadowhunter@example.com",
     role: "User",
@@ -19,7 +19,6 @@ const sampleUsers = [
   },
   {
     username: "pixelqueen",
-    password: "hashedpassword789",
     phone: "9988776655",
     email: "pixelqueen@example.com",
     role: "User",
@@ -28,7 +27,6 @@ const sampleUsers = [
   },
   {
     username: "noobmaster69",
-    password: "hashedpassword321",
     phone: "9090909090",
     email: "noobmaster69@example.com",
     role: "User",
@@ -37,7 +35,6 @@ const sampleUsers = [
   },
   {
     username: "cyberknight",
-    password: "hashedpassword654",
     phone: "8800554433",
     email: "cyberknight@example.com",
     role: "User",
@@ -46,7 +43,6 @@ const sampleUsers = [
   },
   {
     username: "vr_addict",
-    password: "hashedpassword987",
     phone: "7001234567",
     email: "vraddict@example.com",
     role: "User",
@@ -55,7 +51,6 @@ const sampleUsers = [
   },
   {
     username: "esportslegend",
-    password: "hashedpassword159",
     phone: "8123456789",
     email: "esportslegend@example.com",
     role: "User",
@@ -64,7 +59,6 @@ const sampleUsers = [
   },
   {
     username: "arcadehero",
-    password: "hashedpassword753",
     phone: "9776655443",
     email: "arcadehero@example.com",
     role: "User",
@@ -73,7 +67,6 @@ const sampleUsers = [
   },
   {
     username: "consoleking",
-    password: "hashedpassword852",
     phone: "9556677880",
     email: "consoleking@example.com",
     role: "User",
@@ -82,7 +75,6 @@ const sampleUsers = [
   },
   {
     username: "nexusadmin",
-    password: "hashedpassword999",
     phone: "9001122334",
     email: "admin@nexusgaming.com",
     role: "Admin",

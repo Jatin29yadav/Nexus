@@ -641,20 +641,55 @@ describe("SEC-13 auth cookie flags", () => {
   });
 });
 
-describe("SEC-15 seed scripts can wipe a production database", () => {
+describe("SEC-15 seed scripts cannot wipe a production database", () => {
   const source = (file) => fs.readFileSync(path.join(ROOT, file), "utf8");
 
   // Static check on purpose: these scripts connect to MONGO_URI from .env and
   // delete data, so tests must never execute them.
-  vuln.each(["init/index.js", "seedStations.js"])(
+  it.each(["init/index.js", "seedStations.js"])(
     "%s refuses to run when NODE_ENV is production",
     (file) => {
       expect(source(file)).toMatch(/NODE_ENV/);
     },
   );
 
-  vuln("the sample users file contains no literal passwords", () => {
+  it("the sample users file contains no literal passwords", () => {
     expect(source("init/data.js")).not.toMatch(/password:\s*["'`]/);
+  });
+
+  describe("the shared guard (init/guard.js)", () => {
+    const { assertSafeToSeed } = require("../../init/guard");
+    const uri = "mongodb://127.0.0.1/x";
+
+    it("allows development", () => {
+      expect(() => assertSafeToSeed("seed", { MONGO_URI: uri })).not.toThrow();
+    });
+
+    it("refuses production", () => {
+      expect(() => assertSafeToSeed("seed", { MONGO_URI: uri, NODE_ENV: "production" })).toThrow(
+        /refusing to run with NODE_ENV=production/,
+      );
+    });
+
+    it("allows production only with the explicit opt-in", () => {
+      expect(() =>
+        assertSafeToSeed("seed", { MONGO_URI: uri, NODE_ENV: "production", ALLOW_PRODUCTION_SEED: "yes" }),
+      ).not.toThrow();
+    });
+
+    it("refuses to run without MONGO_URI", () => {
+      expect(() => assertSafeToSeed("seed", {})).toThrow(/MONGO_URI is not set/);
+    });
+  });
+
+  it.each(["init/index.js", "seedStations.js"])("%s calls the guard before connecting", (file) => {
+    const text = source(file);
+    expect(text.indexOf("assertSafeToSeed(")).toBeGreaterThan(-1);
+    expect(text.indexOf("assertSafeToSeed(")).toBeLessThan(text.indexOf("mongoose.connect("));
+  });
+
+  it("the station seed no longer deletes anything", () => {
+    expect(source("seedStations.js")).not.toMatch(/deleteMany|drop\(/);
   });
 });
 
