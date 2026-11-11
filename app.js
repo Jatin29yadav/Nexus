@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 
 const cors = require("cors");
+const helmet = require("helmet");
 const cookieParser = require("cookie-parser");
 const mongoose = require("mongoose");
 const rejectOperators = require("./utils/rejectOperators.js");
@@ -27,6 +28,17 @@ const trustProxy =
       ? 1
       : 0;
 if (trustProxy > 0) app.set("trust proxy", trustProxy);
+
+// SEC-08: security headers. This is a JSON-only API, so the CSP allows nothing
+// to load or frame it. helmet also removes X-Powered-By.
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      useDefaults: false,
+      directives: { defaultSrc: ["'none'"], frameAncestors: ["'none'"] },
+    },
+  }),
+);
 
 // SEC-04: object values in query filters are wrapped in $eq unless the code
 // marks them with mongoose.trusted(), so user input can never act as an operator.

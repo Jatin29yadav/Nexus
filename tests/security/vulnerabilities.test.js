@@ -422,15 +422,26 @@ describe("SEC-07 unused packages stay out of the manifest", () => {
   });
 });
 
-describe("SEC-08 security headers are missing", () => {
-  vuln("X-Powered-By is not sent", async () => {
+describe("SEC-08 security headers", () => {
+  it("X-Powered-By is not sent", async () => {
     const res = await api().get("/api/stations");
     expect(res.headers["x-powered-by"]).toBeUndefined();
   });
 
-  vuln("X-Content-Type-Options: nosniff is sent", async () => {
+  it("X-Content-Type-Options: nosniff is sent", async () => {
     const res = await api().get("/api/stations");
     expect(res.headers["x-content-type-options"]).toBe("nosniff");
+  });
+
+  it("HSTS, a deny-all CSP and frame protection are sent, on errors too", async () => {
+    for (const url of ["/api/stations", "/api/does-not-exist"]) {
+      const res = await api().get(url);
+      expect(res.headers["strict-transport-security"]).toMatch(/max-age=\d+/);
+      expect(res.headers["content-security-policy"]).toBe(
+        "default-src 'none';frame-ancestors 'none'",
+      );
+      expect(res.headers["x-frame-options"]).toBe("SAMEORIGIN");
+    }
   });
 });
 
