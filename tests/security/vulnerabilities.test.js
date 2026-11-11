@@ -599,15 +599,45 @@ describe("SEC-13 auth cookie flags", () => {
     return res.headers["set-cookie"][0];
   };
 
-  vuln("the cookie has an explicit lifetime (Max-Age or Expires)", async () => {
+  it("the cookie has an explicit lifetime (Max-Age or Expires)", async () => {
     expect(await loginCookie()).toMatch(/Max-Age=|Expires=/i);
   });
 
-  vuln("the cookie is never SameSite=None without Secure", async () => {
+  it("the cookie is never SameSite=None without Secure", async () => {
     const cookie = await loginCookie(); // NODE_ENV is not production here
     const sameSiteNone = /SameSite=None/i.test(cookie);
     const secure = /;\s*Secure/i.test(cookie);
     expect(sameSiteNone && !secure).toBe(false);
+  });
+
+  it("outside production: HttpOnly, SameSite=Lax, Path=/, Max-Age of 7 days", async () => {
+    const cookie = await loginCookie();
+    expect(cookie).toMatch(/HttpOnly/i);
+    expect(cookie).toMatch(/SameSite=Lax/i);
+    expect(cookie).toMatch(/Path=\//i);
+    expect(cookie).toMatch(/Max-Age=604800(;|$)/i);
+  });
+
+  it("register and logout use the same attributes as login", async () => {
+    const attrs = (cookie) =>
+      cookie
+        .split(";")
+        .slice(1)
+        .map((part) => part.trim().split("=")[0].toLowerCase())
+        .filter((name) => !["max-age", "expires"].includes(name))
+        .sort();
+
+    const login = await loginCookie();
+    const register = (
+      await api()
+        .post("/api/users/register")
+        .send({ username: "cookie_user", email: "cookie@example.test", password: PASSWORD })
+    ).headers["set-cookie"][0];
+    const logout = (await api().post("/api/users/logout")).headers["set-cookie"][0];
+
+    expect(attrs(register)).toEqual(attrs(login));
+    expect(attrs(logout)).toEqual(attrs(login));
+    expect(register).toMatch(/Max-Age=604800/i);
   });
 });
 

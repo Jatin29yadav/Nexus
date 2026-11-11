@@ -24,7 +24,7 @@ describe("POST /api/users/register", () => {
     const [cookie] = cookiesOf(res);
     expect(cookie).toMatch(/^token=[\w-]+\.[\w-]+\.[\w-]+;/);
     expect(cookie).toMatch(/HttpOnly/i);
-    expect(cookie).toMatch(/SameSite=None/i);
+    expect(cookie).toMatch(/SameSite=Lax/i); // not production here; see SEC-13 tests
   });
 
   it("stores a bcrypt hash, never the plain password, and defaults role to User", async () => {

@@ -13,7 +13,7 @@
 | Request body | JSON only (`Content-Type: application/json`). Any other body type on POST/PUT/DELETE → **415** `"Content-Type must be application/json."` (ML-004) |
 | Origin check | On POST/PUT/DELETE, an `Origin` header that is not an allowed frontend origin → **403** `"Origin not allowed."` Requests without `Origin` (non-browser clients) pass (ML-004) |
 | Auth | httpOnly cookie `token` containing a JWT `{ userId }`, HS256, 7 days. **No `Authorization` header support.** The browser must send credentials (`withCredentials: true`) |
-| Cookie flags | `httpOnly`, `sameSite: "none"`, `secure` only when `NODE_ENV=production`, no `maxAge`, no `domain` |
+| Cookie flags | `httpOnly`, `path=/`, `maxAge` 7 days (same as the JWT), no `domain`. Production: `Secure; SameSite=None` (or `SameSite=<COOKIE_SAMESITE>` when that env var is `lax`/`strict`). Elsewhere: `SameSite=Lax`, not `Secure`. Login, register and logout share one definition (ML-008) |
 | Roles | `"User"` (default) and `"Admin"` on `User.role` |
 | Ids | MongoDB ObjectId strings. Stations are also addressed by `stationId` such as `"PC-01"`, `"C-05"` |
 | Dates | ISO 8601 strings in requests; ISO strings in responses |

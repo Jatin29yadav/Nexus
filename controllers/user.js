@@ -1,5 +1,6 @@
 const User = require("../models/User");
 const { signAuthToken } = require("../utils/authToken");
+const { setAuthCookie, clearAuthCookie } = require("../utils/authCookie");
 const bcrypt = require("bcryptjs");
 
 // Compared against when the email is unknown, so "no such user" costs the same
@@ -21,14 +22,10 @@ module.exports.registerUser = async (req, res) => {
 
     // Sign before saving: if signing fails no half-registered account is left.
     const user = new User({ email, username, phone, password });
-    const token = signAuthToken(user._id);
+    signAuthToken(user._id); // throws on a missing secret, before anything is stored
     await user.save();
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "none",
-    });
+    setAuthCookie(res, user._id);
 
     return res.status(201).json({
       success: true,
@@ -83,13 +80,7 @@ module.exports.loginUser = async (req, res) => {
       });
     }
 
-    const token = signAuthToken(user._id);
-
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "none",
-    });
+    setAuthCookie(res, user._id);
 
     return res.status(200).json({
       success: true,
@@ -105,12 +96,7 @@ module.exports.loginUser = async (req, res) => {
 };
 
 module.exports.logoutUser = (req, res) => {
-  res.cookie("token", "", {
-    httpOnly: true,
-    secure: true,
-    sameSite: "none",
-    expires: new Date(0),
-  });
+  clearAuthCookie(res);
   return res.status(200).json({
     success: true,
     message: "Logged out successfully.",
