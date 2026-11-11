@@ -69,7 +69,9 @@ module.exports.createBooking = async (req, res) => {
 
 module.exports.getAllBookings = async (req, res) => {
   try {
-    const bookings = await Booking.find()
+    // SEC-01: customers only ever see their own bookings; admins see all.
+    const filter = req.user.role === "Admin" ? {} : { user: req.user._id };
+    const bookings = await Booking.find(filter)
       .populate("user", "username email")
       .sort({ createdAt: -1 });
     return res.status(200).json({ success: true, bookings });

@@ -31,8 +31,8 @@ const atLeast = (version, minimum) => {
   return true;
 };
 
-describe("SEC-01 booking list is not scoped to the caller", () => {
-  vuln("a normal user only receives their own bookings", async () => {
+describe("SEC-01 booking list is scoped to the caller", () => {
+  it("a normal user only receives their own bookings", async () => {
     const alice = await makeUser();
     const bob = await makeUser();
     await makeBooking(alice, { name: "Alice", phone: "9111111111" });
@@ -42,6 +42,18 @@ describe("SEC-01 booking list is not scoped to the caller", () => {
 
     expect(res.status).toBe(200);
     expect(res.body.bookings.map((b) => b.name)).toEqual(["Alice"]);
+  });
+
+  it("an admin still receives every booking", async () => {
+    const alice = await makeUser();
+    const bob = await makeUser();
+    const admin = await makeAdmin();
+    await makeBooking(alice, { name: "Alice" });
+    await makeBooking(bob, { name: "Bob" });
+
+    const res = await api().get("/api/bookings").set("Cookie", admin.cookie);
+
+    expect(res.body.bookings.map((b) => b.name).sort()).toEqual(["Alice", "Bob"]);
   });
 });
 
