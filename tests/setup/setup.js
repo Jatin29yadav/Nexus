@@ -1,0 +1,40 @@
+// Runs in every test file before the app is loaded.
+const path = require("path");
+const mongoose = require("mongoose");
+
+// Rule: tests use .env.test only. Values are loaded, never printed.
+require("dotenv").config({
+  path: path.resolve(__dirname, "../../.env.test"),
+  quiet: true,
+});
+
+const memoryUri = process.env.TEST_MONGO_URI;
+if (!memoryUri || !/^mongodb:\/\/127\.0\.0\.1:/.test(memoryUri)) {
+  throw new Error("Refusing to run: in-memory MongoDB URI is missing.");
+}
+
+// Whatever .env.test says, the only database tests can reach is the in-memory one.
+process.env.MONGO_URI = memoryUri;
+// Deterministic values the assertions rely on.
+process.env.CLIENT_URL = "https://frontend.example.test";
+if (!process.env.JWT_SECRET) {
+  process.env.JWT_SECRET = "test-only-secret-not-used-anywhere-else";
+}
+
+beforeAll(async () => {
+  await mongoose.connect(memoryUri, { dbName: `nexus_test_${process.pid}` });
+  // Load every model and build its indexes (unique email, username, stationId).
+  for (const name of ["User", "Booking", "Station", "Tournament", "Message"]) {
+    await require(`../../models/${name}`).init();
+  }
+});
+
+beforeEach(async () => {
+  const { collections } = mongoose.connection;
+  await Promise.all(Object.values(collections).map((c) => c.deleteMany({})));
+});
+
+afterAll(async () => {
+  await mongoose.connection.dropDatabase();
+  await mongoose.disconnect();
+});
