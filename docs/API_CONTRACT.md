@@ -37,6 +37,14 @@ Per client IP; over the limit → **429** `{ success: false, message: "Too many 
 | `POST /users/register` | 10 / hour |
 | `POST /messages` | 10 / hour |
 
+### Health (ML-014)
+
+`GET /health` and `GET /api/health` — public, not rate limited. **200** `{ success: true, status: "ok" }` when the database is connected, **503** `{ success: false, status: "unavailable" }` otherwise. Use `/health` as Render's health-check path.
+
+### Body size and malformed bodies (ML-014)
+
+JSON bodies are limited to 50 kB → **413** `"Request body is too large."`. Unparseable JSON → **400** `"Malformed JSON body."`. Unhandled server errors → **500** `"Internal Server Error"`; no stack trace or driver text is ever returned.
+
 ### Ids and validation (ML-012)
 
 A route parameter that is not a 24-character hex ObjectId → **400** `"Invalid id."` on every route (was a 500 with the route's generic error text). Bodies are validated with Zod on every route that takes one; a violation → **400** with a message naming the field. Unknown body keys are dropped.
@@ -212,9 +220,9 @@ Message = { _id, name, email, phone?, subject: string (default "No Subject"), me
 ```
 
 #### `POST /api/messages` — Public
-- **Body:** `{ name, email, message, phone?, subject? }`
+- **Body:** `{ name (≤100), email, message (≤5000), phone?, subject? (≤200) }` — validated (ML-014); other keys (e.g. `status`) are dropped
 - **201:** `{ success, message: "Transmission sent successfully!" }`
-- **Errors:** 400 `"Please fill all the required fields."`; 500 `"Something went wrong, please try again later!"`
+- **Errors:** 400 `"Please fill all the required fields."` when `name`, `email` or `message` is missing/empty; 400 with a field message for an invalid email or over-long field; 429 (rate limit); 500 `"Something went wrong, please try again later!"`
 
 #### `GET /api/messages` — Admin
 - **200:** `{ success, messages: Message[] }` newest first

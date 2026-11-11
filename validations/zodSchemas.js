@@ -158,10 +158,24 @@ const createTournamentSchema = z.object({
 // endTime — contract M-16) are stripped.
 const updateTournamentSchema = z.object(tournamentFields).partial();
 
+// ── Contact messages ────────────────────────────────────────────────────
+const REQUIRED = "Please fill all the required fields.";
 const messageSchema = z.object({
-  name: z.string().min(2),
-  email: z.string().email(),
-  message: z.string().min(10, "Message must be at least 10 characters long"),
+  name: z.string(REQUIRED).trim().min(1, REQUIRED).max(100, "Name is too long"),
+  email: z
+    .email({ error: (issue) => (issue.input ? "Invalid email format" : REQUIRED) })
+    .max(254, "Email is too long"),
+  message: z.string(REQUIRED).trim().min(1, REQUIRED).max(5000, "Message is too long"),
+  subject: z.string("Subject must be text").trim().max(200, "Subject is too long").optional(),
+  phone: phone.optional(),
+});
+
+// ── Wishlist ────────────────────────────────────────────────────────────
+const wishlistSchema = z.object({
+  stationId: z
+    .string("Station ID is required")
+    .min(1, "Station ID is required")
+    .regex(/^[A-Za-z0-9-]{1,10}$/, "Invalid station id"),
 });
 
 module.exports = {
@@ -176,4 +190,5 @@ module.exports = {
   createTournamentSchema,
   updateTournamentSchema,
   messageSchema,
+  wishlistSchema,
 };

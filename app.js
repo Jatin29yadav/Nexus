@@ -7,6 +7,7 @@ const cookieParser = require("cookie-parser");
 const mongoose = require("mongoose");
 const rejectOperators = require("./utils/rejectOperators.js");
 const csrfGuard = require("./utils/csrfGuard.js");
+const errorHandler = require("./utils/errorHandler.js");
 const { allowedOrigins } = require("./config/origins.js");
 const { apiLimiter } = require("./config/rateLimits.js");
 const ExpressError = require("./utils/expressError.js");
@@ -51,10 +52,23 @@ app.use(
   }),
 );
 
+// Liveness/readiness for Render's health check. No auth, no rate limit, and
+// nothing about the deployment beyond "is the database connected".
+const health = (req, res) => {
+  const databaseUp = mongoose.connection.readyState === 1;
+  res
+    .status(databaseUp ? 200 : 503)
+    .set("Cache-Control", "no-store")
+    .json({ success: databaseUp, status: databaseUp ? "ok" : "unavailable" });
+};
+app.get("/health", health);
+app.get("/api/health", health);
+
 app.use("/api", apiLimiter);
 app.use(csrfGuard);
-// JSON only: form-encoded bodies are not parsed (SEC-05).
-app.use(express.json());
+// JSON only: form-encoded bodies are not parsed (SEC-05). Bodies over 50 kB
+// are refused with 413; the largest legitimate payload is a few kB.
+app.use(express.json({ limit: "50kb" }));
 app.use(cookieParser());
 app.use(rejectOperators);
 
@@ -69,12 +83,6 @@ app.use((req, res, next) => {
   next(new ExpressError(404, "API Endpoint Not Found!"));
 });
 
-app.use((err, req, res, next) => {
-  const { statusCode = 500 } = err;
-  res.status(statusCode).json({
-    success: false,
-    message: err.message || "Internal Server Error",
-  });
-});
+app.use(errorHandler);
 
 module.exports = app;
