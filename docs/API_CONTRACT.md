@@ -10,7 +10,8 @@
 | Item | Current behaviour |
 |---|---|
 | Base path | `/api` (frontend base URL = `VITE_API_BASE_URL`, must include `/api`; falls back to `http://localhost:3005/api`) |
-| Request body | JSON. Form-encoded bodies are also accepted (`Nexus/app.js:23`) — to be removed (SEC-05) |
+| Request body | JSON only (`Content-Type: application/json`). Any other body type on POST/PUT/DELETE → **415** `"Content-Type must be application/json."` (ML-004) |
+| Origin check | On POST/PUT/DELETE, an `Origin` header that is not an allowed frontend origin → **403** `"Origin not allowed."` Requests without `Origin` (non-browser clients) pass (ML-004) |
 | Auth | httpOnly cookie `token` containing a JWT `{ userId }`, HS256, 7 days. **No `Authorization` header support.** The browser must send credentials (`withCredentials: true`) |
 | Cookie flags | `httpOnly`, `sameSite: "none"`, `secure` only when `NODE_ENV=production`, no `maxAge`, no `domain` |
 | Roles | `"User"` (default) and `"Admin"` on `User.role` |

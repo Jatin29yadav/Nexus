@@ -5,6 +5,8 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const mongoose = require("mongoose");
 const rejectOperators = require("./utils/rejectOperators.js");
+const csrfGuard = require("./utils/csrfGuard.js");
+const { allowedOrigins } = require("./config/origins.js");
 const ExpressError = require("./utils/expressError.js");
 
 const userRouter = require("./routes/user.js");
@@ -20,13 +22,14 @@ mongoose.set("sanitizeFilter", true);
 
 app.use(
   cors({
-    origin: [process.env.CLIENT_URL, "http://localhost:5173"],
+    origin: allowedOrigins,
     credentials: true,
   }),
 );
 
+app.use(csrfGuard);
+// JSON only: form-encoded bodies are not parsed (SEC-05).
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(rejectOperators);
 

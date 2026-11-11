@@ -237,9 +237,13 @@ describe("SEC-04 operator injection is refused everywhere", () => {
   });
 });
 
-describe("SEC-05 cross-site request forgery via form-encoded POST", () => {
-  // Passes since SEC-03 (the form body no longer validates). The real fix,
-  // and the tests that pin it, land with the SEC-05 commit.
+describe("SEC-05 cross-site request forgery", () => {
+  const FRONTEND = "https://frontend.example.test"; // CLIENT_URL in tests/setup
+  const formBody =
+    "name=x&email=x%40example.test&phone=9000000000&bookingType=PC&membersCount=1" +
+    "&stations[]=PC-01&totalAmount=0" +
+    "&bookingTime[start]=2030-01-10T10:00:00.000Z&bookingTime[end]=2030-01-10T12:00:00.000Z";
+
   it("a form POST from another origin cannot create a booking", async () => {
     await seedStations();
     const { cookie } = await makeUser();
@@ -251,14 +255,62 @@ describe("SEC-05 cross-site request forgery via form-encoded POST", () => {
       .set("Cookie", cookie)
       .set("Origin", "https://attacker.example")
       .type("form")
-      .send(
-        "name=x&email=x%40example.test&phone=9000000000&bookingType=PC&membersCount=1" +
-          "&stations[]=PC-01&totalAmount=0" +
-          "&bookingTime[start]=2030-01-10T10:00:00.000Z&bookingTime[end]=2030-01-10T12:00:00.000Z",
-      );
+      .send(formBody);
 
     expect(await models.Booking.countDocuments()).toBe(0);
-    expect(res.status).toBeGreaterThanOrEqual(400);
+    expect(res.status).toBe(403);
+    expect(res.body).toEqual({ success: false, message: "Origin not allowed." });
+  });
+
+  it("form-encoded bodies are refused even without an Origin header (415)", async () => {
+    const { cookie } = await makeUser();
+    const res = await api().post("/api/bookings").set("Cookie", cookie).type("form").send(formBody);
+    expect(res.status).toBe(415);
+  });
+
+  it("the text/plain trick (JSON smuggled in a form) is refused", async () => {
+    await seedStations();
+    const { cookie } = await makeUser();
+    const res = await api()
+      .post("/api/bookings")
+      .set("Cookie", cookie)
+      .set("Content-Type", "text/plain")
+      .send(JSON.stringify(bookingPayload()));
+
+    expect(res.status).toBe(415);
+    expect(await models.Booking.countDocuments()).toBe(0);
+  });
+
+  it("a JSON request from a foreign origin is refused on every state-changing method", async () => {
+    const owner = await makeUser();
+    const booking = await makeBooking(owner);
+    const from = (req) => req.set("Cookie", owner.cookie).set("Origin", "https://attacker.example");
+
+    expect((await from(api().put(`/api/bookings/${booking._id}`)).send({ phone: "9111111111" })).status).toBe(403);
+    expect((await from(api().delete(`/api/bookings/${booking._id}`))).status).toBe(403);
+    expect((await from(api().post("/api/users/logout"))).status).toBe(403);
+    expect(await models.Booking.countDocuments()).toBe(1);
+  });
+
+  it("the sandboxed-iframe origin \"null\" is refused", async () => {
+    const res = await api().post("/api/users/logout").set("Origin", "null");
+    expect(res.status).toBe(403);
+  });
+
+  it("the real frontend origin is accepted", async () => {
+    await seedStations();
+    const { cookie } = await makeUser();
+    const res = await api()
+      .post("/api/bookings")
+      .set("Cookie", cookie)
+      .set("Origin", FRONTEND)
+      .send(bookingPayload());
+    expect(res.status).toBe(201);
+  });
+
+  it("reads are not affected by the origin check", async () => {
+    const res = await api().get("/api/stations").set("Origin", "https://attacker.example");
+    expect(res.status).toBe(200);
   });
 });
 
