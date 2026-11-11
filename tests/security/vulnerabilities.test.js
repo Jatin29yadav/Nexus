@@ -24,6 +24,8 @@ const {
 } = require("../setup/helpers");
 
 const ROOT = path.resolve(__dirname, "../..");
+const installed = (name) =>
+  JSON.parse(fs.readFileSync(path.join(ROOT, "node_modules", name, "package.json"), "utf8")).version;
 const atLeast = (version, minimum) => {
   const a = version.split(".").map(Number);
   const b = minimum.split(".").map(Number);
@@ -380,19 +382,43 @@ describe("SEC-06 rate limiting", () => {
 });
 
 describe("SEC-07 known-vulnerable dependency versions are installed", () => {
-  const installed = (name) => require(`${name}/package.json`).version;
 
-  vuln("mongoose is at a patched version (>= 8.24.7)", () => {
+  it("mongoose is at a patched version (>= 8.24.7)", () => {
     expect(atLeast(installed("mongoose"), "8.24.7")).toBe(true);
   });
 
-  vuln("zod is at a patched version (>= 4.6.6)", () => {
+  it("zod is at a patched version (>= 4.6.6)", () => {
     expect(atLeast(installed("zod"), "4.6.6")).toBe(true);
   });
 
-  vuln("body-parser is at a patched version (> 2.3.0)", () => {
+  it("body-parser is at a patched version (> 2.3.0)", () => {
     const v = installed("body-parser");
     expect(atLeast(v, "2.3.0") && v !== "2.3.0").toBe(true);
+  });
+});
+
+describe("SEC-07 unused packages stay out of the manifest", () => {
+  const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8"));
+
+  it.each([
+    "axios",
+    "connect-flash",
+    "ejs",
+    "ejs-mate",
+    "express-ejs-layouts",
+    "express-session",
+    "method-override",
+    "passport",
+    "passport-local",
+    "passport-local-mongoose",
+    "nodemon",
+  ])("%s is not a dependency", (name) => {
+    expect(manifest.dependencies).not.toHaveProperty(name);
+    expect(manifest.devDependencies).not.toHaveProperty(name);
+  });
+
+  it("proxy-addr is at a patched version (> 2.0.7), since trust proxy is now on", () => {
+    expect(atLeast(installed("proxy-addr"), "2.0.8")).toBe(true);
   });
 });
 
