@@ -139,7 +139,7 @@ Booking = {
 
 #### `GET /api/bookings/:bookingId`
 - **200:** `{ success, booking: Booking }` with `user` populated (`username`)
-- **Errors:** 404 `"Not found"`; 403 `"Forbidden Access."` — due to a bug this is returned to the owner too; only admins succeed (SEC-17); 500 `"Error."`
+- **Errors:** 404 `"Not found"`; 403 `"Forbidden Access."` for anyone who is neither the owner nor an admin (the owner now succeeds — SEC-17 fixed, ML-009); 500 `"Error."`
 
 #### `PUT /api/bookings/:bookingId` — owner or admin
 - **Body:** `{ phone?, bookingTime?: { start, end } }` — validated (400). `totalAmount` from the client is ignored; when `bookingTime` changes the server recomputes it, and a window that overlaps an active tournament is refused with 400 `"Cafe is reserved for '<title>'."` (ML-002)
@@ -183,7 +183,7 @@ Player     = { _id, name, inGameId, phone }    // 5 or 6 per team
 - **Errors:** 401/403; 500 `"Error creating tournament"` (also for validation failures)
 
 #### `PUT /api/tournaments/:tournamentId` — Admin
-- **Body:** any of `{ title, game, description, eventTime, maxTeams, status, prize, entryFee, format, thumbnail, rules }`; other keys are ignored; no validators run
+- **Body:** any of `{ title, game, description, eventTime, maxTeams, status, prize, entryFee, format, thumbnail, rules }`; other keys are ignored. Validated (ML-009): `status` must be one of the enum values, `eventTime.end` after `start`, `maxTeams` 1–256 (numeric strings accepted), `thumbnail` an http(s) URL, `rules` a list of strings → 400 + field message otherwise
 - **200:** `{ success, message: "Tournament updated successfully!", tournament: Tournament }`
 - **Errors:** 401/403; 404 `"Tournament not found"`; 500 `"Error updating tournament details."`
 

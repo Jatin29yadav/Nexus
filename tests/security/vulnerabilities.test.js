@@ -745,14 +745,14 @@ describe("SEC-16 env files are git-ignored", () => {
 });
 
 describe("SEC-17 owner check and update validation", () => {
-  vuln("the owner can read their own booking by id", async () => {
+  it("the owner can read their own booking by id", async () => {
     const owner = await makeUser();
     const booking = await makeBooking(owner);
     const res = await api().get(`/api/bookings/${booking._id}`).set("Cookie", owner.cookie);
     expect(res.status).toBe(200);
   });
 
-  vuln("a tournament cannot be updated to an invalid status", async () => {
+  it("a tournament cannot be updated to an invalid status", async () => {
     const t = await makeTournament();
     const { cookie } = await makeAdmin();
     const res = await api()
@@ -762,6 +762,59 @@ describe("SEC-17 owner check and update validation", () => {
 
     expect((await models.Tournament.findById(t._id).lean()).status).toBe("Upcoming");
     expect(res.status).toBe(400);
+    expect(res.body).toEqual({ success: false, message: "Invalid tournament status" });
+  });
+
+  it("the populated owner is returned to the owner, and a stranger still gets 403", async () => {
+    const owner = await makeUser();
+    const stranger = await makeUser();
+    const booking = await makeBooking(owner);
+
+    const mine = await api().get(`/api/bookings/${booking._id}`).set("Cookie", owner.cookie);
+    expect(mine.body.booking.user).toEqual({
+      _id: owner.user._id.toString(),
+      username: owner.user.username,
+    });
+
+    const theirs = await api().get(`/api/bookings/${booking._id}`).set("Cookie", stranger.cookie);
+    expect(theirs.status).toBe(403);
+    expect(theirs.body).toEqual({ success: false, message: "Forbidden Access." });
+  });
+
+  it.each([
+    ["end before start", { eventTime: { start: "2030-03-01T18:00:00.000Z", end: "2030-03-01T10:00:00.000Z" } }, "End time must be after start time"],
+    ["zero teams", { maxTeams: 0 }, "Max teams must be at least 1"],
+    ["a javascript: thumbnail", { thumbnail: "javascript:alert(1)" }, "Thumbnail must be an http(s) URL"],
+    ["rules that are not a list", { rules: "none" }, "Rules must be a list"],
+  ])("a tournament update with %s is a 400 and changes nothing", async (_label, body, message) => {
+    const t = await makeTournament();
+    const { cookie } = await makeAdmin();
+    const res = await api().put(`/api/tournaments/${t._id}`).set("Cookie", cookie).send(body);
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ success: false, message });
+    expect((await models.Tournament.findById(t._id)).updatedAt).toEqual(t.updatedAt);
+  });
+
+  it("what the admin edit form really sends still works (string maxTeams, UI-only fields)", async () => {
+    const t = await makeTournament();
+    const { cookie } = await makeAdmin();
+    const res = await api()
+      .put(`/api/tournaments/${t._id}`)
+      .set("Cookie", cookie)
+      .send({
+        title: "Renamed",
+        maxTeams: "16",
+        status: "Live",
+        selectedDate: "2030-03-01T00:00:00.000Z",
+        startTime: "10:00",
+        endTime: "18:00",
+        registeredTeams: [], // not editable through this route
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.tournament).toMatchObject({ title: "Renamed", maxTeams: 16, status: "Live" });
+    expect(res.body.tournament).not.toHaveProperty("selectedDate");
   });
 });
 

@@ -105,16 +105,47 @@ const teamRegistrationSchema = z.object({
     .max(6, "You can only have up to 1 substitute player (Total 6)"),
 });
 
+// ── Tournaments ─────────────────────────────────────────────────────────
+const eventWindow = z
+  .object({ start: isoDate("start"), end: isoDate("end") }, "Event time is required")
+  .refine((t) => new Date(t.end) > new Date(t.start), "End time must be after start time");
+
+const text = (label, max) =>
+  z.string(`${label} must be text`).trim().max(max, `${label} is too long`);
+
+const tournamentFields = {
+  title: text("Title", 120).min(1, "Title is required"),
+  game: text("Game", 80).min(1, "Game is required"),
+  description: text("Description", 5000),
+  eventTime: eventWindow,
+  // The admin form may send this as a string (contract M-17).
+  maxTeams: z.coerce
+    .number("Max teams must be a number")
+    .int("Max teams must be a whole number")
+    .min(1, "Max teams must be at least 1")
+    .max(256, "Max teams is too large"),
+  status: z.enum(
+    ["Upcoming", "Registration Open", "Live", "Completed", "Cancelled"],
+    "Invalid tournament status",
+  ),
+  prize: text("Prize", 120),
+  entryFee: text("Entry fee", 120),
+  format: text("Format", 120),
+  thumbnail: text("Thumbnail", 500).regex(/^https?:\/\//i, "Thumbnail must be an http(s) URL"),
+  rules: z.array(text("Rule", 500), "Rules must be a list").max(50, "Too many rules"),
+};
+
 const createTournamentSchema = z.object({
-  title: z.string().min(5, "Tournament title must be at least 5 characters"),
-  game: z.string().min(2, "Game name is required"),
-  description: z.string().optional(),
-  eventTime: z.object({
-    start: z.string().datetime(),
-    end: z.string().datetime(),
-  }),
-  maxTeams: z.number().int().positive("Max teams must be a valid number"),
+  title: tournamentFields.title,
+  game: tournamentFields.game,
+  description: tournamentFields.description.optional(),
+  eventTime: tournamentFields.eventTime,
+  maxTeams: tournamentFields.maxTeams,
 });
+
+// Every field optional; unknown keys (the edit form's selectedDate, startTime,
+// endTime — contract M-16) are stripped.
+const updateTournamentSchema = z.object(tournamentFields).partial();
 
 const messageSchema = z.object({
   name: z.string().min(2),
@@ -131,5 +162,6 @@ module.exports = {
   playerValidation,
   teamRegistrationSchema,
   createTournamentSchema,
+  updateTournamentSchema,
   messageSchema,
 };

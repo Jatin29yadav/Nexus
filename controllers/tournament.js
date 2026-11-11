@@ -198,36 +198,11 @@ module.exports.deleteTournament = async (req, res) => {
 
 module.exports.updateTournament = async (req, res) => {
   try {
-    const {
-      title,
-      game,
-      description,
-      eventTime,
-      maxTeams,
-      status,
-      prize,
-      entryFee,
-      format,
-      thumbnail,
-      rules,
-    } = req.body;
-
+    // req.body was validated by updateTournamentSchema: known fields only.
     const updatedTournament = await Tournament.findByIdAndUpdate(
       req.params.tournamentId,
-      {
-        title,
-        game,
-        description,
-        eventTime,
-        maxTeams,
-        status,
-        prize,
-        entryFee,
-        format,
-        thumbnail,
-        rules,
-      },
-      { new: true },
+      { $set: req.body },
+      { new: true, runValidators: true },
     );
 
     if (!updatedTournament) {

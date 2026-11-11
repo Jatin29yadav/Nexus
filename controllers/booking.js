@@ -24,6 +24,14 @@ const releaseStations = (filter) =>
     $set: { status: "Available", assignedUser: null, activeBooking: null },
   });
 
+// SEC-17: the single ownership rule for bookings. Works whether `booking.user`
+// is an ObjectId or a populated user document.
+const isOwnerOrAdmin = (booking, user) => {
+  if (user.role === "Admin") return true;
+  const ownerId = booking.user && booking.user._id ? booking.user._id : booking.user;
+  return String(ownerId) === String(user._id);
+};
+
 module.exports.createBooking = async (req, res) => {
   try {
     // req.body has been validated and stripped by bookingSchema.
@@ -122,10 +130,7 @@ module.exports.getBookingById = async (req, res) => {
     if (!booking)
       return res.status(404).json({ success: false, message: "Not found" });
 
-    if (
-      req.user.role !== "Admin" &&
-      booking.user.toString() !== req.user._id.toString()
-    ) {
+    if (!isOwnerOrAdmin(booking, req.user)) {
       return res
         .status(403)
         .json({ success: false, message: "Forbidden Access." });
@@ -142,10 +147,7 @@ module.exports.cancelBooking = async (req, res) => {
     if (!booking)
       return res.status(404).json({ success: false, message: "Not found." });
 
-    if (
-      req.user.role !== "Admin" &&
-      booking.user.toString() !== req.user._id.toString()
-    ) {
+    if (!isOwnerOrAdmin(booking, req.user)) {
       return res.status(403).json({ success: false, message: "Unauthorized." });
     }
 
@@ -167,10 +169,7 @@ module.exports.updateBooking = async (req, res) => {
     if (!booking)
       return res.status(404).json({ success: false, message: "Not found" });
 
-    if (
-      req.user.role !== "Admin" &&
-      booking.user.toString() !== req.user._id.toString()
-    ) {
+    if (!isOwnerOrAdmin(booking, req.user)) {
       return res.status(403).json({ success: false, message: "Forbidden." });
     }
 
