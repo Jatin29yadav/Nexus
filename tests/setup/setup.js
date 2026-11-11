@@ -16,7 +16,8 @@ if (!memoryUri || !/^mongodb:\/\/127\.0\.0\.1:/.test(memoryUri)) {
 // Whatever .env.test says, the only database tests can reach is the in-memory one.
 process.env.MONGO_URI = memoryUri;
 // Deterministic values the assertions rely on.
-process.env.CLIENT_URL = "https://frontend.example.test";
+process.env.FRONTEND_URL = "https://frontend.example.test";
+delete process.env.CLIENT_URL; // old name; must not influence tests
 if (!process.env.JWT_SECRET) {
   process.env.JWT_SECRET = "test-only-secret-not-used-anywhere-else";
 }

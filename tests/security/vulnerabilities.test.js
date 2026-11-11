@@ -240,7 +240,7 @@ describe("SEC-04 operator injection is refused everywhere", () => {
 });
 
 describe("SEC-05 cross-site request forgery", () => {
-  const FRONTEND = "https://frontend.example.test"; // CLIENT_URL in tests/setup
+  const FRONTEND = "https://frontend.example.test"; // FRONTEND_URL in tests/setup
   const formBody =
     "name=x&email=x%40example.test&phone=9000000000&bookingType=PC&membersCount=1" +
     "&stations[]=PC-01&totalAmount=0" +

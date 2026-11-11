@@ -2,7 +2,7 @@
 // loaded, so this file sets NODE_ENV before requiring it.
 process.env.NODE_ENV = "production";
 
-const { api, vuln, makeUser } = require("../setup/helpers");
+const { api, makeUser } = require("../setup/helpers");
 
 const preflight = (origin) =>
   api()
@@ -11,7 +11,7 @@ const preflight = (origin) =>
     .set("Access-Control-Request-Method", "POST");
 
 describe("CORS", () => {
-  it("allows the configured CLIENT_URL with credentials", async () => {
+  it("allows the configured FRONTEND_URL with credentials", async () => {
     const res = await preflight("https://frontend.example.test");
     expect(res.headers["access-control-allow-origin"]).toBe("https://frontend.example.test");
     expect(res.headers["access-control-allow-credentials"]).toBe("true");
@@ -27,9 +27,44 @@ describe("CORS", () => {
     expect(res.headers["access-control-allow-origin"]).not.toBe("*");
   });
 
-  vuln("SEC-14: http://localhost:5173 is not an allowed origin in production", async () => {
+  it("SEC-14: http://localhost:5173 is not an allowed origin in production", async () => {
     const res = await preflight("http://localhost:5173");
     expect(res.headers["access-control-allow-origin"]).toBeUndefined();
+  });
+
+  it("SEC-14: a write from localhost:5173 is refused in production", async () => {
+    const res = await api().post("/api/users/logout").set("Origin", "http://localhost:5173");
+    expect(res.status).toBe(403);
+  });
+
+  describe("SEC-14: origin list parsing (config/origins.js)", () => {
+    const { parseOrigins } = require("../../config/origins");
+
+    it("accepts a comma-separated FRONTEND_URL and tidies each entry", () => {
+      expect(
+        parseOrigins({
+          NODE_ENV: "production",
+          FRONTEND_URL: " https://a.example.test/ , https://b.example.test ,",
+        }),
+      ).toEqual(["https://a.example.test", "https://b.example.test"]);
+    });
+
+    it("falls back to the old CLIENT_URL name", () => {
+      expect(parseOrigins({ NODE_ENV: "production", CLIENT_URL: "https://old.example.test" })).toEqual([
+        "https://old.example.test",
+      ]);
+    });
+
+    it("an unset value never becomes an allowed origin", () => {
+      expect(parseOrigins({ NODE_ENV: "production" })).toEqual([]);
+    });
+
+    it("adds the Vite dev origin only outside production", () => {
+      expect(parseOrigins({ FRONTEND_URL: "https://a.example.test" })).toEqual([
+        "https://a.example.test",
+        "http://localhost:5173",
+      ]);
+    });
   });
 });
 
