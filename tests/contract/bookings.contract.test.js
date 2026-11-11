@@ -101,32 +101,80 @@ describe("POST /api/bookings", () => {
       status: "Completed",
       eventTime: { start: "2030-01-10T11:00:00.000Z", end: "2030-01-10T15:00:00.000Z" },
     });
+    await seedStations();
     const { cookie } = await makeUser();
     const res = await api().post("/api/bookings").set("Cookie", cookie).send(bookingPayload());
     expect(res.status).toBe(201);
   });
 
-  it("500: missing bookingTime is reported as a server error (current behaviour)", async () => {
+  it("400: missing bookingTime (SEC-03)", async () => {
     const { cookie } = await makeUser();
     const { bookingTime, ...body } = bookingPayload();
     const res = await api().post("/api/bookings").set("Cookie", cookie).send(body);
 
-    expect(res.status).toBe(500);
-    expect(res.body).toEqual({
-      success: false,
-      message: "Something went wrong while booking!",
-    });
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ success: false, message: "Booking time is required" });
   });
 
-  it("500: invalid bookingType is reported as a server error (current behaviour)", async () => {
+  it("400: invalid bookingType (SEC-03)", async () => {
     const { cookie } = await makeUser();
     const res = await api()
       .post("/api/bookings")
       .set("Cookie", cookie)
       .send(bookingPayload({ bookingType: "VR" }));
 
-    expect(res.status).toBe(500);
-    expect(res.body.success).toBe(false);
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({
+      success: false,
+      message: "Please select either PC or Console",
+    });
+  });
+
+  it.each([
+    ["end before start", { bookingTime: { start: WINDOW.end, end: WINDOW.start } }, "End time must be after start time"],
+    ["no stations", { stations: [] }, "Select at least one station"],
+    ["the same station twice", { stations: ["PC-01", "PC-01"] }, "A station was selected twice"],
+    ["more stations than players", { membersCount: 1 }, "You cannot book more stations than players"],
+    ["operator object as a station", { stations: [{ $ne: null }] }, "Invalid station id"],
+    ["zero players", { membersCount: 0 }, "At least one player is required"],
+  ])("400: %s (SEC-03)", async (_label, overrides, message) => {
+    await seedStations();
+    const { cookie } = await makeUser();
+    const res = await api()
+      .post("/api/bookings")
+      .set("Cookie", cookie)
+      .send(bookingPayload(overrides));
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ success: false, message });
+    expect(await models.Booking.countDocuments()).toBe(0);
+    expect(await models.Station.countDocuments({ status: "Occupied" })).toBe(0);
+  });
+
+  it("409: an unavailable station fails the whole booking and claims nothing (SEC-03)", async () => {
+    await seedStations();
+    await models.Station.updateOne({ stationId: "PC-02" }, { status: "Offline" });
+    const { cookie } = await makeUser();
+    const res = await api().post("/api/bookings").set("Cookie", cookie).send(bookingPayload());
+
+    expect(res.status).toBe(409);
+    expect(res.body).toEqual({
+      success: false,
+      message: "One or more selected stations are not available.",
+    });
+    expect(await models.Booking.countDocuments()).toBe(0);
+    expect((await models.Station.findOne({ stationId: "PC-01" })).status).toBe("Available");
+  });
+
+  it("the stored price is players x hours x 100, whatever the client sends (SEC-03)", async () => {
+    await seedStations();
+    const { cookie } = await makeUser();
+    const res = await api()
+      .post("/api/bookings")
+      .set("Cookie", cookie)
+      .send(bookingPayload({ membersCount: 3, totalAmount: 1 }));
+
+    expect(res.body.booking.totalAmount).toBe(600); // 3 players x 2 h x 100
   });
 });
 
@@ -228,6 +276,35 @@ describe("PUT /api/bookings/:bookingId", () => {
     const res = await api().put(`/api/bookings/${newId()}`).set("Cookie", cookie).send(changes);
     expect(res.status).toBe(404);
     expect(res.body).toEqual({ success: false, message: "Not found" });
+  });
+
+  it("200: the amount is recomputed from the new time, not taken from the client (SEC-03)", async () => {
+    const owner = await makeUser();
+    const booking = await makeBooking(owner);
+
+    const res = await api()
+      .put(`/api/bookings/${booking._id}`)
+      .set("Cookie", owner.cookie)
+      .send({ ...changes, totalAmount: 1 });
+
+    expect(res.body.booking.totalAmount).toBe(600); // 2 players x 3 h x 100
+  });
+
+  it("400: an update into a tournament window is refused (SEC-03)", async () => {
+    await makeTournament({
+      title: "Clash Night",
+      eventTime: { start: "2030-01-11T11:00:00.000Z", end: "2030-01-11T15:00:00.000Z" },
+    });
+    const owner = await makeUser();
+    const booking = await makeBooking(owner);
+
+    const res = await api()
+      .put(`/api/bookings/${booking._id}`)
+      .set("Cookie", owner.cookie)
+      .send(changes);
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe("Cafe is reserved for 'Clash Night'.");
   });
 
   it("200: owner updates phone, time and amount", async () => {

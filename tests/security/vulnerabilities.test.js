@@ -124,8 +124,8 @@ describe("SEC-02 rosters stay available to admins and hidden from everyone else"
   });
 });
 
-describe("SEC-03 booking creation trusts the client", () => {
-  vuln("the price is not taken from the request", async () => {
+describe("SEC-03 booking creation does not trust the client", () => {
+  it("the price is not taken from the request", async () => {
     await seedStations();
     const { cookie } = await makeUser();
     const res = await api()
@@ -139,7 +139,7 @@ describe("SEC-03 booking creation trusts the client", () => {
     expect(res.status).toBeLessThan(500);
   });
 
-  vuln("a station that is already occupied cannot be booked again", async () => {
+  it("a station that is already occupied cannot be booked again", async () => {
     await seedStations();
     const alice = await makeUser();
     const bob = await makeUser();
@@ -158,7 +158,7 @@ describe("SEC-03 booking creation trusts the client", () => {
     expect(second.status).toBeLessThan(500);
   });
 
-  vuln("a station under maintenance cannot be booked", async () => {
+  it("a station under maintenance cannot be booked", async () => {
     await seedStations();
     await models.Station.updateOne({ stationId: "PC-03" }, { status: "Maintenance" });
     const { cookie } = await makeUser();
@@ -171,7 +171,7 @@ describe("SEC-03 booking creation trusts the client", () => {
     expect((await models.Station.findOne({ stationId: "PC-03" })).status).toBe("Maintenance");
   });
 
-  vuln("a station id that does not exist is rejected", async () => {
+  it("a station id that does not exist is rejected", async () => {
     await seedStations();
     const { cookie } = await makeUser();
     const res = await api()
@@ -205,7 +205,9 @@ describe("SEC-04 NoSQL operator injection on login", () => {
 });
 
 describe("SEC-05 cross-site request forgery via form-encoded POST", () => {
-  vuln("a form POST from another origin cannot create a booking", async () => {
+  // Passes since SEC-03 (the form body no longer validates). The real fix,
+  // and the tests that pin it, land with the SEC-05 commit.
+  it("a form POST from another origin cannot create a booking", async () => {
     await seedStations();
     const { cookie } = await makeUser();
 

@@ -2,8 +2,29 @@ const Booking = require("../models/Booking");
 const Station = require("../models/Station");
 const Tournament = require("../models/Tournament");
 
+const PRICE_PER_PLAYER_HOUR = 100;
+
+// SEC-03: the price is always computed here, never taken from the client.
+const priceFor = (membersCount, bookingTime) => {
+  const hours = (new Date(bookingTime.end) - new Date(bookingTime.start)) / (60 * 60 * 1000);
+  return Math.round((membersCount || 1) * hours * PRICE_PER_PLAYER_HOUR);
+};
+
+const findClashingTournament = (bookingTime) =>
+  Tournament.findOne({
+    status: { $in: ["Upcoming", "Registration Open", "Live"] },
+    "eventTime.start": { $lt: new Date(bookingTime.end) },
+    "eventTime.end": { $gt: new Date(bookingTime.start) },
+  });
+
+const releaseStations = (filter) =>
+  Station.updateMany(filter, {
+    $set: { status: "Available", assignedUser: null, activeBooking: null },
+  });
+
 module.exports.createBooking = async (req, res) => {
   try {
+    // req.body has been validated and stripped by bookingSchema.
     const {
       name,
       email,
@@ -13,14 +34,9 @@ module.exports.createBooking = async (req, res) => {
       membersName,
       bookingTime,
       stations,
-      totalAmount,
     } = req.body;
 
-    const clashingTournament = await Tournament.findOne({
-      status: { $in: ["Upcoming", "Registration Open", "Live"] },
-      "eventTime.start": { $lt: new Date(bookingTime.end) },
-      "eventTime.end": { $gt: new Date(bookingTime.start) },
-    });
+    const clashingTournament = await findClashingTournament(bookingTime);
 
     if (clashingTournament) {
       return res.status(400).json({
@@ -39,13 +55,13 @@ module.exports.createBooking = async (req, res) => {
       membersCount,
       membersName,
       bookingTime,
-      totalAmount,
+      totalAmount: priceFor(membersCount, bookingTime),
     });
 
-    await newBooking.save();
-
-    await Station.updateMany(
-      { stationId: { $in: stations } },
+    // Claim the stations atomically: only stations that exist AND are still
+    // Available match, so a concurrent request cannot take the same one.
+    const claim = await Station.updateMany(
+      { stationId: { $in: stations }, status: "Available" },
       {
         $set: {
           status: "Occupied",
@@ -54,6 +70,21 @@ module.exports.createBooking = async (req, res) => {
         },
       },
     );
+
+    if (claim.modifiedCount !== stations.length) {
+      await releaseStations({ activeBooking: newBooking._id });
+      return res.status(409).json({
+        success: false,
+        message: "One or more selected stations are not available.",
+      });
+    }
+
+    try {
+      await newBooking.save();
+    } catch (saveError) {
+      await releaseStations({ activeBooking: newBooking._id });
+      throw saveError;
+    }
 
     return res.status(201).json({
       success: true,
@@ -117,12 +148,7 @@ module.exports.cancelBooking = async (req, res) => {
     }
 
     // Free the stations
-    await Station.updateMany(
-      { stationId: { $in: booking.stations } },
-      {
-        $set: { status: "Available", assignedUser: null, activeBooking: null },
-      },
-    );
+    await releaseStations({ stationId: { $in: booking.stations } });
 
     await Booking.findByIdAndDelete(req.params.bookingId);
     return res
@@ -146,10 +172,19 @@ module.exports.updateBooking = async (req, res) => {
       return res.status(403).json({ success: false, message: "Forbidden." });
     }
 
-    const { phone, bookingTime, totalAmount } = req.body;
+    const { phone, bookingTime } = req.body;
     booking.phone = phone || booking.phone;
-    if (bookingTime) booking.bookingTime = bookingTime;
-    if (totalAmount) booking.totalAmount = totalAmount;
+    if (bookingTime) {
+      const clashingTournament = await findClashingTournament(bookingTime);
+      if (clashingTournament) {
+        return res.status(400).json({
+          success: false,
+          message: `Cafe is reserved for '${clashingTournament.title}'.`,
+        });
+      }
+      booking.bookingTime = bookingTime;
+      booking.totalAmount = priceFor(booking.membersCount, bookingTime);
+    }
 
     await booking.save();
     return res

@@ -111,7 +111,9 @@ Booking = {
 ```
 
 #### `POST /api/bookings`
-- **Body:** `{ name, email, phone, bookingType, membersCount, membersName, bookingTime: { start, end }, stations: string[], totalAmount }` — none validated; `totalAmount` and `stations` are trusted (SEC-03)
+- **Body:** `{ name, email, phone, bookingType: "PC" | "Console", membersCount: 1–60, membersName?: string[], bookingTime: { start, end }, stations: string[] }` — validated (ML-002). `end` must be after `start`, at most 24 h; `stations` non-empty, unique, no more than `membersCount`. A `totalAmount` sent by the client is **ignored**: the server stores `membersCount × hours × 100`.
+- **Stations:** every listed station must exist and be `Available`; they are claimed atomically. Otherwise **409** `"One or more selected stations are not available."` and nothing is booked.
+- **Validation errors:** **400** with a field message (e.g. `"Booking time is required"`); previously these were 500.
 - **201:** `{ success, message: "Deployment Confirmed!", booking: Booking }`; side effect: listed stations become `Occupied`
 - **Errors:** 400 `"Cafe is reserved for '<tournament title>'."` when the window overlaps an Upcoming / Registration Open / Live tournament; 500 `"Something went wrong while booking!"`
 
@@ -124,7 +126,7 @@ Booking = {
 - **Errors:** 404 `"Not found"`; 403 `"Forbidden Access."` — due to a bug this is returned to the owner too; only admins succeed (SEC-17); 500 `"Error."`
 
 #### `PUT /api/bookings/:bookingId` — owner or admin
-- **Body:** `{ phone?, bookingTime?: { start, end }, totalAmount? }`
+- **Body:** `{ phone?, bookingTime?: { start, end } }` — validated (400). `totalAmount` from the client is ignored; when `bookingTime` changes the server recomputes it, and a window that overlaps an active tournament is refused with 400 `"Cafe is reserved for '<title>'."` (ML-002)
 - **200:** `{ success, message: "Re-calibrated!", booking: Booking }`
 - **Errors:** 404 `"Not found"`; 403 `"Forbidden."`; 500 `"Update failed."`
 

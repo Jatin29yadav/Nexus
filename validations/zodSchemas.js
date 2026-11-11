@@ -1,18 +1,55 @@
 const { z } = require("zod");
 
-const bookingSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Invalid email format"),
-  phone: z.string().length(10, "Phone number must be 10 digits"),
-  bookingType: z.enum(["PC", "Console"], "Please select either PC or Console"),
-  membersCount: z.number().int().positive().min(1),
-  membersName: z
-    .array(z.string())
-    .nonempty("At least one member name is required"),
-  bookingTime: z.object({
-    start: z.string().datetime("Invalid start time format"),
-    end: z.string().datetime("Invalid end time format"),
-  }),
+// ── Shared pieces ───────────────────────────────────────────────────────
+const phone = z
+  .string("Phone number is required")
+  .trim()
+  .regex(/^\+?[0-9\s\-()]{7,20}$/, "Phone number is not valid");
+
+const isoDate = (label) => z.iso.datetime({ offset: true, error: `Invalid ${label} time` });
+
+const MAX_BOOKING_HOURS = 24;
+const timeWindow = z
+  .object(
+    { start: isoDate("start"), end: isoDate("end") },
+    "Booking time is required",
+  )
+  .refine((t) => new Date(t.end) > new Date(t.start), "End time must be after start time")
+  .refine(
+    (t) => new Date(t.end) - new Date(t.start) <= MAX_BOOKING_HOURS * 60 * 60 * 1000,
+    `A booking cannot be longer than ${MAX_BOOKING_HOURS} hours`,
+  );
+
+// ── Bookings ────────────────────────────────────────────────────────────
+// `totalAmount` is deliberately absent: the server computes it (SEC-03), and
+// unknown keys are stripped.
+const bookingSchema = z
+  .object({
+    name: z.string("Name is required").trim().min(2, "Name must be at least 2 characters").max(80, "Name is too long"),
+    email: z.email("Invalid email format").max(254, "Email is too long"),
+    phone,
+    bookingType: z.enum(["PC", "Console"], "Please select either PC or Console"),
+    membersCount: z
+      .number("Number of players is required")
+      .int("Number of players must be a whole number")
+      .min(1, "At least one player is required")
+      .max(60, "Too many players"),
+    membersName: z.array(z.string().trim().min(1).max(80)).max(60).default([]),
+    bookingTime: timeWindow,
+    stations: z
+      .array(
+        z.string("Invalid station id").regex(/^[A-Za-z0-9-]{1,10}$/, "Invalid station id"),
+        "Select at least one station",
+      )
+      .min(1, "Select at least one station")
+      .max(60, "Too many stations"),
+  })
+  .refine((b) => new Set(b.stations).size === b.stations.length, "A station was selected twice")
+  .refine((b) => b.stations.length <= b.membersCount, "You cannot book more stations than players");
+
+const updateBookingSchema = z.object({
+  phone: phone.optional(),
+  bookingTime: timeWindow.optional(),
 });
 
 const stationSchema = z.object({
@@ -60,6 +97,7 @@ const messageSchema = z.object({
 
 module.exports = {
   bookingSchema,
+  updateBookingSchema,
   stationSchema,
   playerValidation,
   teamRegistrationSchema,
