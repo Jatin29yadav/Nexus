@@ -35,11 +35,28 @@ module.exports.registerUser = async (req, res) => {
       user: { _id: user._id, email: user.email, username: user.username },
     });
   } catch (error) {
-    if (error.statusCode === 500) {
-      console.error("Register failed:", error.message);
-      return res.status(500).json({ success: false, message: error.message });
+    // SEC-12: fixed messages only; the original error stays in the server log.
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern || {})[0];
+      return res.status(422).json({
+        success: false,
+        message:
+          field === "username"
+            ? "Username is already taken"
+            : "User already exists with this email",
+      });
     }
-    return res.status(400).json({ success: false, message: error.message });
+    if (error.name === "ValidationError") {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid registration details." });
+    }
+    console.error("Register failed:", error.message);
+    return res.status(500).json({
+      success: false,
+      message:
+        error.statusCode === 500 ? error.message : "Server error during registration",
+    });
   }
 };
 

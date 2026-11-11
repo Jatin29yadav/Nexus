@@ -558,8 +558,8 @@ describe("SEC-11 password policy and input validation on register", () => {
   });
 });
 
-describe("SEC-12 register returns raw database error text", () => {
-  vuln("a duplicate username does not leak the MongoDB error", async () => {
+describe("SEC-12 register never returns raw database error text", () => {
+  it("a duplicate username does not leak the MongoDB error", async () => {
     const { user } = await makeUser();
     const res = await api().post("/api/users/register").send({
       username: user.username,
@@ -568,6 +568,27 @@ describe("SEC-12 register returns raw database error text", () => {
     });
     expect(res.status).toBeGreaterThanOrEqual(400);
     expect(res.body.message).not.toMatch(/E11000|dup key|index:/);
+    expect(res.status).toBe(422);
+    expect(res.body).toEqual({ success: false, message: "Username is already taken" });
+  });
+
+  it("an unexpected database failure is a generic 500, logged server-side only", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    const save = vi
+      .spyOn(models.User.prototype, "save")
+      .mockRejectedValue(new Error("connection pool to cluster0-shard-00 destroyed"));
+    try {
+      const res = await api()
+        .post("/api/users/register")
+        .send({ username: "unlucky", email: "unlucky@example.test", password: PASSWORD });
+
+      expect(res.status).toBe(500);
+      expect(res.body).toEqual({ success: false, message: "Server error during registration" });
+      expect(log).toHaveBeenCalledWith("Register failed:", expect.stringContaining("cluster0"));
+    } finally {
+      save.mockRestore();
+      log.mockRestore();
+    }
   });
 });
 
