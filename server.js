@@ -1,5 +1,14 @@
 require("dotenv").config({ path: "./.env" });
 
+const { validateEnv } = require("./config/env");
+
+try {
+  validateEnv();
+} catch (error) {
+  console.error(error.message);
+  process.exit(1);
+}
+
 const mongoose = require("mongoose");
 const app = require("./app");
 

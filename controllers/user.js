@@ -19,9 +19,10 @@ module.exports.registerUser = async (req, res) => {
       });
     }
 
-    const user = await User.create({ email, username, phone, password });
-
+    // Sign before saving: if signing fails no half-registered account is left.
+    const user = new User({ email, username, phone, password });
     const token = signAuthToken(user._id);
+    await user.save();
 
     res.cookie("token", token, {
       httpOnly: true,
@@ -34,6 +35,10 @@ module.exports.registerUser = async (req, res) => {
       user: { _id: user._id, email: user.email, username: user.username },
     });
   } catch (error) {
+    if (error.statusCode === 500) {
+      console.error("Register failed:", error.message);
+      return res.status(500).json({ success: false, message: error.message });
+    }
     return res.status(400).json({ success: false, message: error.message });
   }
 };
@@ -74,6 +79,7 @@ module.exports.loginUser = async (req, res) => {
       user: { _id: user._id, email: user.email, username: user.username },
     });
   } catch (error) {
+    console.error("Login failed:", error.message);
     return res.status(500).json({
       success: false,
       message: "Server error during login",

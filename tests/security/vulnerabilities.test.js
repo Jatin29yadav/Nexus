@@ -462,13 +462,13 @@ describe("SEC-09 logout does not invalidate the token", () => {
   });
 });
 
-describe("SEC-10 a missing JWT_SECRET is not detected and leaks library internals", () => {
+describe("SEC-10 a missing or weak JWT_SECRET is detected and never leaks library internals", () => {
   const original = process.env.JWT_SECRET;
   afterEach(() => {
     process.env.JWT_SECRET = original;
   });
 
-  vuln("register does not answer with the jsonwebtoken error text", async () => {
+  it("register does not answer with the jsonwebtoken error text", async () => {
     delete process.env.JWT_SECRET;
     const res = await api().post("/api/users/register").send({
       username: "nosecret",
@@ -476,6 +476,46 @@ describe("SEC-10 a missing JWT_SECRET is not detected and leaks library internal
       password: PASSWORD,
     });
     expect(res.body.message || "").not.toMatch(/secretOrPrivateKey/i);
+    expect(res.status).toBe(500);
+    expect(res.body).toEqual({ success: false, message: "Server configuration error." });
+    expect(await models.User.countDocuments()).toBe(0); // no half-created account
+  });
+
+  describe("boot-time check (config/env.js)", () => {
+    const { envProblems, validateEnv } = require("../../config/env");
+    const good = {
+      MONGO_URI: "mongodb://127.0.0.1/x",
+      JWT_SECRET: "s".repeat(32),
+      NODE_ENV: "production",
+      FRONTEND_URL: "https://frontend.example.test",
+    };
+
+    it("accepts a complete configuration", () => {
+      expect(envProblems(good)).toEqual([]);
+      expect(() => validateEnv(good)).not.toThrow();
+    });
+
+    it.each([
+      ["MONGO_URI", "MONGO_URI is not set"],
+      ["JWT_SECRET", "JWT_SECRET is not set"],
+      ["FRONTEND_URL", "FRONTEND_URL is not set (required in production)"],
+    ])("refuses to start without %s", (name, problem) => {
+      const { [name]: _removed, ...env } = good;
+      expect(envProblems(env)).toEqual([problem]);
+      expect(() => validateEnv(env)).toThrow(/Invalid environment configuration/);
+    });
+
+    it("refuses a JWT_SECRET shorter than 32 characters, without echoing it", () => {
+      const env = { ...good, JWT_SECRET: "short-secret" };
+      expect(envProblems(env)).toEqual(["JWT_SECRET must be at least 32 characters"]);
+      expect(() => validateEnv(env)).toThrow(expect.not.stringContaining("short-secret"));
+    });
+
+    it("server.js runs the check before anything else", () => {
+      const server = fs.readFileSync(path.join(ROOT, "server.js"), "utf8");
+      expect(server.indexOf("validateEnv()")).toBeGreaterThan(-1);
+      expect(server.indexOf("validateEnv()")).toBeLessThan(server.indexOf("mongoose.connect"));
+    });
   });
 });
 
