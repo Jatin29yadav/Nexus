@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Tournament = require("../models/Tournament");
 
 // SEC-02: rosters (player names, in-game ids, phone numbers) and captain ids
@@ -66,10 +67,26 @@ module.exports.getAllTournaments = async (req, res) => {
   }
 };
 
+const CLOSED_STATUSES = ["Completed", "Cancelled"];
+
+// Why a registration cannot go ahead, or null when it can.
+const registrationProblem = (tournament, userId, teamName) => {
+  if (CLOSED_STATUSES.includes(tournament.status)) {
+    return "Registration is closed for this tournament";
+  }
+  if (tournament.registeredTeams.length >= tournament.maxTeams) {
+    return "Tournament is full";
+  }
+  const taken = tournament.registeredTeams.some(
+    (t) => t.captain.toString() === userId.toString() || t.teamName === teamName,
+  );
+  return taken ? "You or this team name are already registered" : null;
+};
+
 module.exports.registerTeam = async (req, res) => {
   try {
     const { tournamentId } = req.params;
-    const { teamName, players } = req.body;
+    const { teamName, players } = req.body; // validated by teamRegistrationSchema
 
     const tournament = await Tournament.findById(tournamentId);
     if (!tournament) {
@@ -78,38 +95,40 @@ module.exports.registerTeam = async (req, res) => {
         .json({ success: false, message: "Tournament not found" });
     }
 
-    if (tournament.registeredTeams.length >= tournament.maxTeams) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Tournament is full" });
+    const problem = registrationProblem(tournament, req.user._id, teamName);
+    if (problem) {
+      return res.status(400).json({ success: false, message: problem });
     }
 
-    const existingTeam = tournament.registeredTeams.find(
-      (t) =>
-        t.captain.toString() === req.user._id.toString() ||
-        t.teamName === teamName,
+    // SEC-18: the checks above are repeated inside the write itself, so two
+    // simultaneous requests cannot both pass them (no read-then-write race).
+    const updated = await Tournament.findOneAndUpdate(
+      {
+        _id: tournamentId,
+        status: mongoose.trusted({ $nin: CLOSED_STATUSES }),
+        "registeredTeams.captain": mongoose.trusted({ $ne: req.user._id }),
+        "registeredTeams.teamName": mongoose.trusted({ $ne: teamName }),
+        $expr: mongoose.trusted({ $lt: [{ $size: "$registeredTeams" }, "$maxTeams"] }),
+      },
+      { $push: { registeredTeams: { teamName, captain: req.user._id, players } } },
+      { new: true, runValidators: true },
     );
 
-    if (existingTeam) {
-      return res.status(400).json({
+    if (!updated) {
+      // Lost the race: report what is true now.
+      const current = await Tournament.findById(tournamentId);
+      const reason = current
+        ? registrationProblem(current, req.user._id, teamName)
+        : "Tournament not found";
+      return res.status(current ? 400 : 404).json({
         success: false,
-        message: "You or this team name are already registered",
+        message: reason || "Registration could not be completed. Please try again.",
       });
     }
 
-    const newTeam = {
-      teamName,
-      captain: req.user._id,
-      players,
-    };
-
-    tournament.registeredTeams.push(newTeam);
-
-    const savedTournament = await tournament.save();
-    const registeredTeam =
-      savedTournament.registeredTeams[
-        savedTournament.registeredTeams.length - 1
-      ];
+    const registeredTeam = updated.registeredTeams.find(
+      (t) => t.captain.toString() === req.user._id.toString(),
+    );
 
     return res.status(201).json({
       success: true,

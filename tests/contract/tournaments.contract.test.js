@@ -297,7 +297,7 @@ describe("POST /api/tournaments/:tournamentId/register", () => {
     expect(res.status).toBe(201);
   });
 
-  it.each([4, 7])("500: %i players is reported as a server error (current behaviour)", async (n) => {
+  it.each([4, 7])("400: %i players (SEC-18)", async (n) => {
     const t = await makeTournament();
     const { cookie } = await makeUser();
     const res = await api()
@@ -305,8 +305,11 @@ describe("POST /api/tournaments/:tournamentId/register", () => {
       .set("Cookie", cookie)
       .send({ teamName: "Wrong Size", players: players(n) });
 
-    expect(res.status).toBe(500);
-    expect(res.body).toEqual({ success: false, message: "Error registering team" });
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({
+      success: false,
+      message: "A team must have exactly 5 or 6 players",
+    });
   });
 
   it("400: tournament is full", async () => {

@@ -11,12 +11,20 @@ const {
 } = require("../controllers/tournament");
 const { isLoggedIn, isAdmin, optionalAuth } = require("../middleware");
 const validate = require("../utils/validate");
-const { updateTournamentSchema } = require("../validations/zodSchemas");
+const {
+  updateTournamentSchema,
+  teamRegistrationSchema,
+} = require("../validations/zodSchemas");
 
 router.get("/", optionalAuth, getAllTournaments);
 router.get("/:tournamentId", optionalAuth, getTournamentById);
 router.post("/", isLoggedIn, isAdmin, createTournament);
-router.post("/:tournamentId/register", isLoggedIn, registerTeam);
+router.post(
+  "/:tournamentId/register",
+  isLoggedIn,
+  validate({ body: teamRegistrationSchema }),
+  registerTeam,
+);
 router.put(
   "/:tournamentId",
   isLoggedIn,

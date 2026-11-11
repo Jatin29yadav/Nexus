@@ -818,8 +818,8 @@ describe("SEC-17 owner check and update validation", () => {
   });
 });
 
-describe("SEC-18 team registration ignores tournament state", () => {
-  vuln.each(["Completed", "Cancelled"])("cannot register for a %s tournament", async (status) => {
+describe("SEC-18 team registration respects tournament state and capacity", () => {
+  it.each(["Completed", "Cancelled"])("cannot register for a %s tournament", async (status) => {
     const t = await makeTournament({ status });
     const { cookie } = await makeUser();
     const res = await api()
@@ -828,32 +828,37 @@ describe("SEC-18 team registration ignores tournament state", () => {
       .send({ teamName: "Too Late", players: players(5) });
 
     expect(res.status).toBe(400);
+    expect(res.body).toEqual({
+      success: false,
+      message: "Registration is closed for this tournament",
+    });
+    expect((await models.Tournament.findById(t._id)).registeredTeams).toHaveLength(0);
   });
 
-  vuln("concurrent registrations cannot exceed maxTeams", async () => {
+  it("concurrent registrations cannot exceed maxTeams", async () => {
     const t = await makeTournament({ maxTeams: 1 });
     const users = await Promise.all([makeUser(), makeUser(), makeUser(), makeUser()]);
 
-    // Make the race deterministic: hold every save() until all four requests
-    // have passed the "is it full?" check (or 1s has gone by, so a fixed
-    // implementation that still calls save() is not blocked forever).
-    const realSave = models.Tournament.prototype.save;
+    // Make the race real: hold every write until all four requests have passed
+    // the friendly pre-check, then let them hit the database together.
+    const realWrite = models.Tournament.findOneAndUpdate.bind(models.Tournament);
     let waiting = 0;
     let release;
     const allArrived = new Promise((resolve) => {
       release = resolve;
     });
     const spy = vi
-      .spyOn(models.Tournament.prototype, "save")
-      .mockImplementation(async function heldSave(...args) {
+      .spyOn(models.Tournament, "findOneAndUpdate")
+      .mockImplementation(async (...args) => {
         waiting += 1;
         if (waiting >= users.length) release();
         await Promise.race([allArrived, new Promise((r) => setTimeout(r, 1000))]);
-        return realSave.apply(this, args);
+        return realWrite(...args);
       });
 
+    let responses;
     try {
-      await Promise.all(
+      responses = await Promise.all(
         users.map((u, i) =>
           api()
             .post(`/api/tournaments/${t._id}/register`)
@@ -865,7 +870,46 @@ describe("SEC-18 team registration ignores tournament state", () => {
       spy.mockRestore();
     }
 
-    expect((await models.Tournament.findById(t._id)).registeredTeams.length).toBeLessThanOrEqual(1);
+    expect(waiting).toBe(4); // all four really did race
+    expect((await models.Tournament.findById(t._id)).registeredTeams).toHaveLength(1);
+    expect(responses.map((r) => r.status).sort()).toEqual([201, 400, 400, 400]);
+    expect(responses.filter((r) => r.status === 400).map((r) => r.body.message)).toEqual(
+      Array(3).fill("Tournament is full"),
+    );
+  });
+
+  it("one captain racing themselves ends up with exactly one team", async () => {
+    const t = await makeTournament({ maxTeams: 8 });
+    const captain = await makeUser();
+
+    const responses = await Promise.all(
+      ["Alpha", "Bravo", "Charlie"].map((teamName) =>
+        api()
+          .post(`/api/tournaments/${t._id}/register`)
+          .set("Cookie", captain.cookie)
+          .send({ teamName, players: players(5) }),
+      ),
+    );
+
+    expect(responses.filter((r) => r.status === 201)).toHaveLength(1);
+    expect((await models.Tournament.findById(t._id)).registeredTeams).toHaveLength(1);
+  });
+
+  it.each([
+    ["4 players", { players: players(4) }, "A team must have exactly 5 or 6 players"],
+    ["7 players", { players: players(7) }, "A team must have exactly 5 or 6 players"],
+    ["no team name", { teamName: "" }, "Team name too short"],
+    ["a player without a phone", { players: players(5).map(({ phone, ...p }) => p) }, "Phone number is required"],
+  ])("%s is a 400 with a clear message", async (_label, overrides, message) => {
+    const t = await makeTournament();
+    const { cookie } = await makeUser();
+    const res = await api()
+      .post(`/api/tournaments/${t._id}/register`)
+      .set("Cookie", cookie)
+      .send({ teamName: "Valid Team", players: players(5), ...overrides });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ success: false, message });
   });
 });
 

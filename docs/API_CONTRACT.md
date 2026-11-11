@@ -192,9 +192,9 @@ Player     = { _id, name, inGameId, phone }    // 5 or 6 per team
 - **Errors:** 401/403; 404; 500 `"Error deleting tournament"`
 
 #### `POST /api/tournaments/:tournamentId/register` — User
-- **Body:** `{ teamName: string, players: [{ name, inGameId, phone }] }` (5–6 players, enforced by the Mongoose validator → 500 on failure). The caller becomes `captain`.
+- **Body:** `{ teamName: string (2–40), players: [{ name, inGameId, phone }] }`, 5–6 players — validated, 400 + field message otherwise (ML-010). Extra player keys such as `email` are dropped. The caller becomes `captain`.
 - **201:** `{ success, message: "Team registered successfully", team: Team }`
-- **Errors:** 401; 404 `"Tournament not found"`; 400 `"Tournament is full"`; 400 `"You or this team name are already registered"`; 500 `"Error registering team"`
+- **Errors:** 401; 404 `"Tournament not found"`; 400 `"Registration is closed for this tournament"` (status `Completed` or `Cancelled`, ML-010); 400 `"Tournament is full"`; 400 `"You or this team name are already registered"`; 500 `"Error registering team"`. Capacity and duplicate checks are atomic.
 
 #### `PUT /api/tournaments/:tournamentId/team/:teamId/status` — Admin
 - **Body:** `{ status: "Approved" | "Rejected" | "Pending" }`

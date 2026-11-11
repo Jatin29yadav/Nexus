@@ -88,21 +88,26 @@ const stationSchema = z.object({
   installedGames: z.array(z.string()).optional(),
 });
 
-const playerValidation = z.object({
-  name: z.string().min(2, "Player name must be at least 2 characters"),
-  inGameId: z.string().min(2, "In-game ID is required"),
-  phone: z.string().length(10, "Phone number must be exactly 10 digits"),
-});
+// A player's `email` is sent by the form but not stored (contract M-08): stripped.
+const playerValidation = z.object(
+  {
+    name: z.string("Player name is required").trim().min(2, "Player name must be at least 2 characters").max(80, "Player name is too long"),
+    inGameId: z.string("In-game ID is required").trim().min(2, "In-game ID is required").max(80, "In-game ID is too long"),
+    phone,
+  },
+  "Each player needs a name, in-game ID and phone number",
+);
 
 const teamRegistrationSchema = z.object({
   teamName: z
-    .string()
-    .min(3, "Team name too short")
-    .max(30, "Team name too long"),
+    .string("Team name is required")
+    .trim()
+    .min(2, "Team name too short")
+    .max(40, "Team name too long"),
   players: z
-    .array(playerValidation)
-    .min(5, "You need exactly 5 main players")
-    .max(6, "You can only have up to 1 substitute player (Total 6)"),
+    .array(playerValidation, "A team must have exactly 5 or 6 players")
+    .min(5, "A team must have exactly 5 or 6 players")
+    .max(6, "A team must have exactly 5 or 6 players"),
 });
 
 // ── Tournaments ─────────────────────────────────────────────────────────
