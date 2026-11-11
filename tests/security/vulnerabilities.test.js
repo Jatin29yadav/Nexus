@@ -961,8 +961,8 @@ describe("SEC-21 malformed ids and bad enum values return 400", () => {
   });
 });
 
-describe("SEC-22 public station list exposes internal ids", () => {
-  vuln("GET /api/stations does not reveal which user holds a station", async () => {
+describe("SEC-22 public station list exposes no internal ids", () => {
+  it("GET /api/stations does not reveal which user holds a station", async () => {
     await seedStations();
     const { user, cookie } = await makeUser();
     await api().post("/api/bookings").set("Cookie", cookie).send(bookingPayload());

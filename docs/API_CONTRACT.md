@@ -104,14 +104,13 @@ In the tables below: **Public** = no middleware, **User** = `isLoggedIn`, **Admi
 - **200:** `{ success, stations: Station[] }` sorted by `stationId`
 
 ```
-Station = {
+Station = {                         // public shape (ML-013)
   _id, stationId: "PC-01", type: "PC" | "Console",
-  status: "Available" | "Occupied" | "Maintenance" | "Offline",
-  assignedUser: ObjectId | null,
-  activeBooking: { _id, bookingTime: { start, end } } | null,
-  createdAt, updatedAt
+  status: "Available" | "Occupied" | "Maintenance" | "Offline"
 }
 ```
+
+`assignedUser`, `activeBooking`, `createdAt`, `updatedAt` are no longer returned here (SEC-22). The admin-only `PUT /admin/station/:stationId` still returns the full document.
 - **Errors:** 500 `"Error loading seat map data"`
 
 ### 1.3 Bookings — `Nexus/routes/booking.js`, `Nexus/controllers/booking.js` (all **User**)

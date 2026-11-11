@@ -1,5 +1,5 @@
 // Contract: docs/API_CONTRACT.md §1.2 Stations.
-const { api, makeUser, makeBooking, seedStations, models, WINDOW } = require("../setup/helpers");
+const { api, makeUser, makeBooking, seedStations, models } = require("../setup/helpers");
 
 describe("GET /api/stations", () => {
   it("200: public, empty list when nothing is seeded", async () => {
@@ -13,27 +13,15 @@ describe("GET /api/stations", () => {
     const res = await api().get("/api/stations");
 
     expect(res.body.stations.map((s) => s.stationId)).toEqual(["C-01", "PC-01", "PC-02"]);
-    expect(Object.keys(res.body.stations[0]).sort()).toEqual([
-      "__v",
-      "_id",
-      "activeBooking",
-      "assignedUser",
-      "createdAt",
-      "stationId",
-      "status",
-      "type",
-      "updatedAt",
-    ]);
+    expect(Object.keys(res.body.stations[0]).sort()).toEqual(["_id", "stationId", "status", "type"]);
     expect(res.body.stations[0]).toMatchObject({
       stationId: "C-01",
       type: "Console",
       status: "Available",
-      assignedUser: null,
-      activeBooking: null,
     });
   });
 
-  it("200: an occupied station carries its booking's time window", async () => {
+  it("200: an occupied station shows its status but not its holder or booking (SEC-22)", async () => {
     await seedStations(["PC-01"]);
     const owner = await makeUser();
     const booking = await makeBooking(owner, { stations: ["PC-01"] });
@@ -44,10 +32,12 @@ describe("GET /api/stations", () => {
 
     const res = await api().get("/api/stations");
 
-    expect(res.body.stations[0].status).toBe("Occupied");
-    expect(res.body.stations[0].activeBooking).toEqual({
-      _id: booking._id.toString(),
-      bookingTime: WINDOW,
+    expect(res.body.stations[0]).toEqual({
+      _id: expect.any(String),
+      stationId: "PC-01",
+      type: "PC",
+      status: "Occupied",
     });
+    expect(JSON.stringify(res.body)).not.toContain(booking._id.toString());
   });
 });

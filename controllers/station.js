@@ -2,9 +2,12 @@ const Station = require("../models/Station");
 
 module.exports.getAllStations = async (req, res) => {
   try {
+    // SEC-22: public endpoint. Only what the seat map reads; never who holds
+    // a station or which booking it belongs to.
     const stations = await Station.find()
-      .populate("activeBooking", "bookingTime.start bookingTime.end")
-      .sort({ stationId: 1 });
+      .select("stationId type status")
+      .sort({ stationId: 1 })
+      .lean();
 
     return res.status(200).json({ success: true, stations });
   } catch (error) {
