@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Booking = require("../models/Booking");
 const Station = require("../models/Station");
 const Tournament = require("../models/Tournament");
@@ -12,9 +13,10 @@ const priceFor = (membersCount, bookingTime) => {
 
 const findClashingTournament = (bookingTime) =>
   Tournament.findOne({
-    status: { $in: ["Upcoming", "Registration Open", "Live"] },
-    "eventTime.start": { $lt: new Date(bookingTime.end) },
-    "eventTime.end": { $gt: new Date(bookingTime.start) },
+    // Operators written by us, not the client: mark them trusted (sanitizeFilter).
+    status: mongoose.trusted({ $in: ["Upcoming", "Registration Open", "Live"] }),
+    "eventTime.start": mongoose.trusted({ $lt: new Date(bookingTime.end) }),
+    "eventTime.end": mongoose.trusted({ $gt: new Date(bookingTime.start) }),
   });
 
 const releaseStations = (filter) =>
@@ -61,7 +63,7 @@ module.exports.createBooking = async (req, res) => {
     // Claim the stations atomically: only stations that exist AND are still
     // Available match, so a concurrent request cannot take the same one.
     const claim = await Station.updateMany(
-      { stationId: { $in: stations }, status: "Available" },
+      { stationId: mongoose.trusted({ $in: stations }), status: "Available" },
       {
         $set: {
           status: "Occupied",
@@ -148,7 +150,7 @@ module.exports.cancelBooking = async (req, res) => {
     }
 
     // Free the stations
-    await releaseStations({ stationId: { $in: booking.stations } });
+    await releaseStations({ stationId: mongoose.trusted({ $in: booking.stations }) });
 
     await Booking.findByIdAndDelete(req.params.bookingId);
     return res

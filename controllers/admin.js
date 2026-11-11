@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Station = require("../models/Station");
 const Booking = require("../models/Booking");
 const User = require("../models/User");
@@ -75,7 +76,7 @@ module.exports.adminCancelBooking = async (req, res) => {
     await booking.save();
 
     await Station.updateMany(
-      { stationId: { $in: booking.stations } },
+      { stationId: mongoose.trusted({ $in: booking.stations }) },
       {
         $set: { status: "Available", assignedUser: null, activeBooking: null },
       },

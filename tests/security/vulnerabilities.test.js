@@ -185,7 +185,7 @@ describe("SEC-03 booking creation does not trust the client", () => {
 });
 
 describe("SEC-04 NoSQL operator injection on login", () => {
-  vuln.each([{ $gt: "" }, { $ne: null }, { $regex: ".*" }])(
+  it.each([{ $gt: "" }, { $ne: null }, { $regex: ".*" }])(
     "email %j does not log in as an existing user",
     async (email) => {
       await makeUser(); // victim; attacker only knows/guesses a password
@@ -196,11 +196,44 @@ describe("SEC-04 NoSQL operator injection on login", () => {
     },
   );
 
-  vuln("an object-valued email is rejected as bad input (400), not looked up", async () => {
+  it("an object-valued email is rejected as bad input (400), not looked up", async () => {
     const res = await api()
       .post("/api/users/login")
       .send({ email: { $gt: "" }, password: "x" });
     expect(res.status).toBe(400);
+  });
+});
+
+describe("SEC-04 operator injection is refused everywhere", () => {
+  it("an object-valued email on register is a 400 and creates nothing", async () => {
+    const res = await api()
+      .post("/api/users/register")
+      .send({ username: "inj", email: { $ne: null }, password: PASSWORD });
+    expect(res.status).toBe(400);
+    expect(await models.User.countDocuments()).toBe(0);
+  });
+
+  it("a non-string password is a 400, not a bcrypt crash", async () => {
+    const { user } = await makeUser();
+    const res = await api()
+      .post("/api/users/login")
+      .send({ email: user.email, password: { $gt: "" } });
+    expect(res.status).toBe(400);
+  });
+
+  it("any body with a $-prefixed or dotted key is refused, at any depth", async () => {
+    const { cookie } = await makeUser();
+    for (const body of [{ stationId: { $ne: null } }, { a: [{ "b.c": 1 }] }]) {
+      const res = await api().post("/api/users/wishlist").set("Cookie", cookie).send(body);
+      expect(res.status).toBe(400);
+      expect(res.body).toEqual({ success: false, message: "Invalid request." });
+    }
+  });
+
+  it("mongoose sanitizeFilter is on, so an operator object in a filter cannot match", async () => {
+    await makeUser();
+    // Wrapped in $eq, the object is cast against the String path and refused.
+    await expect(models.User.findOne({ email: { $ne: null } })).rejects.toThrow(/Cast to string failed/);
   });
 });
 

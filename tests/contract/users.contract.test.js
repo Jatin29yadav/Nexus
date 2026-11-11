@@ -93,12 +93,12 @@ describe("POST /api/users/login", () => {
     expect(res.body).toEqual({ success: false, message: "Invalid Email or Password" });
   });
 
-  it("500: missing password is reported as a server error (current behaviour)", async () => {
+  it("400: missing password (SEC-04)", async () => {
     const { user } = await makeUser();
     const res = await api().post("/api/users/login").send({ email: user.email });
 
-    expect(res.status).toBe(500);
-    expect(res.body).toEqual({ success: false, message: "Server error during login" });
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ success: false, message: "Password is required" });
   });
 });
 

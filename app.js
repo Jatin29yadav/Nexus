@@ -3,6 +3,8 @@ const app = express();
 
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+const mongoose = require("mongoose");
+const rejectOperators = require("./utils/rejectOperators.js");
 const ExpressError = require("./utils/expressError.js");
 
 const userRouter = require("./routes/user.js");
@@ -11,6 +13,10 @@ const tournamentRouter = require("./routes/tournament.js");
 const bookingRouter = require("./routes/booking.js");
 const adminRouter = require("./routes/admin.js");
 const stationRouter = require("./routes/station.js");
+
+// SEC-04: object values in query filters are wrapped in $eq unless the code
+// marks them with mongoose.trusted(), so user input can never act as an operator.
+mongoose.set("sanitizeFilter", true);
 
 app.use(
   cors({
@@ -22,6 +28,7 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use(rejectOperators);
 
 app.use("/api/users", userRouter);
 app.use("/api/tournaments", tournamentRouter);

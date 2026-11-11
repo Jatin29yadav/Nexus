@@ -25,6 +25,10 @@
 
 The payload key differs per endpoint (`user`, `booking`, `bookings`, `tournament`, `tournaments`, `team`, `station`, `stations`, `messages`, `wishlist`, `data`).
 
+### Operator keys
+
+Any JSON body containing a key that starts with `$` or contains `.` (at any depth) is refused with 400 `"Invalid request."` before it reaches a route (SEC-04).
+
 ### Error envelope
 
 ```json
@@ -56,14 +60,14 @@ In the tables below: **Public** = no middleware, **User** = `isLoggedIn`, **Admi
 ### 1.1 Users — `Nexus/routes/user.js`, `Nexus/controllers/user.js`
 
 #### `POST /api/users/register` — Public
-- **Body:** `{ username: string, email: string, password: string, phone?: string }` (no validation beyond Mongoose `required`/`unique`)
+- **Body:** `{ username: string, email: string, password: string, phone?: string }` — all must be bounded strings (400 otherwise, SEC-04)
 - **201:** `{ success, user: { _id, email, username } }` and sets the `token` cookie (the user is logged in)
 - **Errors:** 422 `"User already exists with this email"`; 400 with raw error text for anything else (duplicate username, missing field)
 
 #### `POST /api/users/login` — Public
 - **Body:** `{ email: string, password: string }`
 - **200:** `{ success, user: { _id, email, username } }` and sets the `token` cookie. **Does not include `role` or `phone`.**
-- **Errors:** 401 `"Invalid Email or Password"`; 500 `"Server error during login"`
+- **Errors:** 400 when `email`/`password` is missing or not a string (`"Email is required"`, `"Password is required"`; was 500); 401 `"Invalid Email or Password"`; 500 `"Server error during login"`
 
 #### `POST /api/users/logout` — Public
 - **Body:** none

@@ -1,5 +1,10 @@
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+
+// Compared against when the email is unknown, so "no such user" costs the same
+// bcrypt round as "wrong password" and cannot be told apart by timing.
+const DUMMY_HASH = bcrypt.hashSync("nexus-timing-equaliser", 10);
 
 module.exports.registerUser = async (req, res) => {
   try {
@@ -42,6 +47,7 @@ module.exports.loginUser = async (req, res) => {
     const user = await User.findOne({ email }).select("+password");
 
     if (!user) {
+      await bcrypt.compare(password, DUMMY_HASH);
       return res.status(401).json({
         success: false,
         message: "Invalid Email or Password",

@@ -20,6 +20,23 @@ const timeWindow = z
     `A booking cannot be longer than ${MAX_BOOKING_HOURS} hours`,
   );
 
+// ── Users ───────────────────────────────────────────────────────────────
+// SEC-04: every credential is a plain, bounded string before it reaches a query.
+const credential = (label, max) =>
+  z.string(`${label} is required`).min(1, `${label} is required`).max(max, `${label} is too long`);
+
+const loginSchema = z.object({
+  email: credential("Email", 254),
+  password: credential("Password", 128),
+});
+
+const registerSchema = z.object({
+  username: credential("Username", 30),
+  email: credential("Email", 254),
+  password: credential("Password", 128),
+  phone: z.string("Phone number is not valid").max(20, "Phone number is not valid").optional(),
+});
+
 // ── Bookings ────────────────────────────────────────────────────────────
 // `totalAmount` is deliberately absent: the server computes it (SEC-03), and
 // unknown keys are stripped.
@@ -96,6 +113,8 @@ const messageSchema = z.object({
 });
 
 module.exports = {
+  loginSchema,
+  registerSchema,
   bookingSchema,
   updateBookingSchema,
   stationSchema,

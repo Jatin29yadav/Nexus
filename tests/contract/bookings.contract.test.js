@@ -135,7 +135,8 @@ describe("POST /api/bookings", () => {
     ["no stations", { stations: [] }, "Select at least one station"],
     ["the same station twice", { stations: ["PC-01", "PC-01"] }, "A station was selected twice"],
     ["more stations than players", { membersCount: 1 }, "You cannot book more stations than players"],
-    ["operator object as a station", { stations: [{ $ne: null }] }, "Invalid station id"],
+    ["operator object as a station", { stations: [{ $ne: null }] }, "Invalid request."],
+    ["non-string station", { stations: [42] }, "Invalid station id"],
     ["zero players", { membersCount: 0 }, "At least one player is required"],
   ])("400: %s (SEC-03)", async (_label, overrides, message) => {
     await seedStations();
