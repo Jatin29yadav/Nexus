@@ -34,7 +34,7 @@ JWT_SECRET=your_jwt_secret
 
 ### Run the Server
 ```bash
-# Development mode (with nodemon if configured)
+# Development mode (node --watch restarts on change)
 npm run dev
 
 # Production mode
@@ -59,7 +59,7 @@ npm install
 ### Configure Environment Variables
 Create a `.env` file in the root of the frontend directory.
 ```env
-VITE_API_URL=http://localhost:3005/api
+VITE_API_BASE_URL=http://localhost:3005/api
 ```
 
 ### Run the Client

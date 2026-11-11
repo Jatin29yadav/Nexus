@@ -21,9 +21,9 @@ Common issues encountered during setup and how to resolve them.
 ## 3. CORS Policy Blocking Requests
 
 **Error**: `Access to fetch at '...' from origin '...' has been blocked by CORS policy`
-- **Cause**: The `CLIENT_URL` in the backend `.env` does not match the URL your React app is running on.
+- **Cause**: The `FRONTEND_URL` in the backend `.env` does not match the URL your React app is running on.
 - **Solution**:
-  - Update `CLIENT_URL` in `Nexus/.env` to match your frontend (e.g., `http://localhost:5173`).
+  - Update `FRONTEND_URL` in `Nexus/.env` to match your frontend (e.g., `http://localhost:5173`).
   - Restart the backend server.
 
 ## 4. JWT Verification Failed / Unauthorized

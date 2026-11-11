@@ -455,3 +455,58 @@ Each step is small enough for its own branch and commit(s). Contract-affecting s
 23. Dashboard query, lean auth lookup (PERF-03, PERF-04).
 24. react-query adoption, context memoisation, timeouts (PERF-07, PERF-08); code splitting if the fallback is approved (PERF-05).
 25. Remove dead files, fix docs, model drift (QUAL-01, QUAL-02, QUAL-11, QUAL-14) — deletions and schema changes need approval.
+
+---
+
+## Phase 3 — security fixes (2026-11-11, branch `fix/security` in both repos)
+
+One commit per finding, each with the full suite green. Backend: 302 tests pass, 1 expected-fail (SEC-09 revocation). Frontend: 100 unit tests pass. `npm audit` reports 0 vulnerabilities in both packages. API changes are logged in `docs/MIGRATION_LOG.md` (ML-001 … ML-014).
+
+Tests live in `Nexus/tests/security/vulnerabilities.test.js` unless another file is named.
+
+| Finding | Status | Test (describe block → file) |
+|---|---|---|
+| SEC-01 | Fixed | `SEC-01 booking list is scoped to the caller` |
+| SEC-02 | Fixed (ML-001) | `SEC-02 public tournament endpoints expose player phone numbers`, `SEC-02 rosters stay available to admins and hidden from everyone else` |
+| SEC-03 | Fixed (ML-002) | `SEC-03 booking creation does not trust the client`; `POST /api/bookings` → `tests/contract/bookings.contract.test.js` |
+| SEC-04 | Fixed (ML-003) | `SEC-04 NoSQL operator injection on login`, `SEC-04 operator injection is refused everywhere` |
+| SEC-05 | Fixed (ML-004) | `SEC-05 cross-site request forgery` |
+| SEC-06 | Fixed (ML-005) | `SEC-06 rate limiting` |
+| SEC-07 | Fixed | `SEC-07 known-vulnerable dependency versions are installed`, `SEC-07 unused packages stay out of the manifest` |
+| SEC-08 | Fixed | `SEC-08 security headers` |
+| SEC-09 | **Partly fixed / deferred** — algorithm pinned to HS256 with explicit expiry; revoking a token on logout needs a `tokenVersion` field on `User` (schema change, awaiting approval) | Fixed part: `token verification` → `tests/security/auth.test.js` (`SEC-09: …`). Deferred part: `SEC-09 logout does not invalidate the token` (still expected-fail) |
+| SEC-10 | Fixed | `SEC-10 a missing or weak JWT_SECRET is detected and never leaks library internals` |
+| SEC-11 | Fixed (ML-006) | `SEC-11 password policy and input validation on register` |
+| SEC-12 | Fixed (ML-007). Residual: the 422 for an already-registered email still confirms that the email exists; removing that needs an email-verification flow | `SEC-12 register never returns raw database error text` |
+| SEC-13 | Fixed (ML-008) | `SEC-13 auth cookie flags`; `SEC-13 auth cookie in production` → `tests/security/cors-production.test.js` |
+| SEC-14 | Fixed | `CORS` (`SEC-14: …`) → `tests/security/cors-production.test.js` |
+| SEC-15 | Fixed in code. Owner still has to check the database for the ten sample accounts (see below) | `SEC-15 seed scripts cannot wipe a production database` |
+| SEC-16 | Fixed (both repos) | `SEC-16 env files are git-ignored` |
+| SEC-17 | Fixed (ML-009) | `SEC-17 owner check and update validation`; frontend `UpdateBooking` → `nexus-frontend/tests/unit/bookings.test.jsx` |
+| SEC-18 | Fixed (ML-010) | `SEC-18 team registration respects tournament state and capacity` |
+| SEC-19 | Fixed (console logging removed). The fake card form itself is still reachable — **needs UI decision** | `SEC-19: card number and CVV are not written to the console` → `nexus-frontend/tests/unit/profile-payment.test.jsx` |
+| SEC-20 | Fixed (ML-011) | `Admin route guard (AUDIT SEC-20)` → `nexus-frontend/tests/unit/admin.test.jsx` |
+| SEC-21 | Fixed (ML-012) | `SEC-21 malformed ids and bad enum values return 400` |
+| SEC-22 | Fixed (ML-013) | `SEC-22 public station list exposes no internal ids`; `GET /api/stations` → `tests/contract/stations.contract.test.js` |
+| DEP-01 | Fixed | `DEP-01: posts to the configured API base URL, not the old Render host` → `nexus-frontend/tests/unit/register-contact.test.jsx` |
+| DEP-02 | Fixed (base URL and auth). The two endpoints it calls still do not exist (contract M-02) | `DEP-02: profile requests go to the configured API, not hard-coded localhost` → `nexus-frontend/tests/unit/profile-payment.test.jsx` |
+| Baseline hardening | Added (ML-014): `/health`, 50 kB body limit, central error handler, validation on every route input, connect-then-listen, SIGTERM | `tests/security/hardening.test.js` |
+
+Also closed along the way: DEP-07 (`trust proxy`), DEP-09 (health endpoint, `engines`), DEP-10 (no reference to the old Render host remains in either repo's source), QUAL-05 (startup order), contract M-05 (login returns `role`), the unused-dependency parts of QUAL-01/QUAL-02.
+
+Not done here (outside this phase or blocked): DEP-04 Vercel rewrite (needs the new Render URL; the backend is ready — set `COOKIE_SAMESITE=lax` when it lands), QUAL-03 time-based availability, dead-file removal (needs approval), PERF items.
+
+## Secrets to rotate
+
+The old Render service is lost, so **every value it held must be treated as exposed**. Generate new values; do not reuse or "restore" old ones. Names only — no values are recorded anywhere in the repos, and git history was not rewritten (the Phase 1 scan found no secret values in either repo's history).
+
+| Secret | Where it is used | What to do |
+|---|---|---|
+| `JWT_SECRET` | Signs every auth cookie (`utils/authToken.js`) | Generate a new random value of at least 32 characters (48 random bytes recommended) and set it only on the new Render service. Anyone holding the old value can forge a session for any user, including admins. Rotating it signs every user out, which is intended. The server now refuses to start with a missing or shorter value. |
+| `MONGO_URI` (the database user's password inside it) | `server.js`, seed scripts | In MongoDB Atlas: create a new database user (or reset the password of the existing one), delete the old user, and build a new connection string. Then review **Network Access** and remove the old Render egress addresses and any `0.0.0.0/0` entry that is not needed. |
+| `SECRET_KEY` | **Nothing** — the code never reads it | Delete it from `.env`, `.env.test` and any dashboard. If the same value was reused for anything else (another app, a session secret), rotate it there. |
+| Sample-user passwords from `init/data.js` | Were hard-coded in this public repo until Phase 3 and are still in git history | Treat as public forever. If `node init/index.js` was ever run against the real database, the ten sample accounts (`gamerpro99@example.com`, `shadowhunter@example.com`, … — the emails are in `init/data.js`) exist there with known passwords: delete them. The seed now takes `SEED_USER_PASSWORD` or generates a random one. |
+| Admin and user account passwords | `User.password` (bcrypt hashes in the database) | If the old database or a dump of it was reachable through the lost service, assume the hashes were copied. At minimum change every admin's password after the new service is up. |
+| Anything else stored in the old Render dashboard | Deploy hooks, API keys, linked-repo tokens | Revoke in the provider that issued it (Render account → API keys / deploy hooks; GitHub → installed apps and deploy keys for `Jatin29yadav/Nexus`). |
+
+Not secrets, but must be set on the new service: `FRONTEND_URL` (exact Vercel origin), `NODE_ENV=production`, optionally `COOKIE_SAMESITE` and `TRUST_PROXY`. The frontend holds no secrets: `VITE_API_BASE_URL` is public by design (anything prefixed `VITE_` is shipped to the browser). Every name is documented in `.env.example` in each repo.
