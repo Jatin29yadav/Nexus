@@ -374,7 +374,7 @@ Untested flows, in the order they should be covered:
 - **Where:** `Nexus/controllers/user.js:23-27,64-68`; `nexus-frontend/vercel.json:1-8`
 - **Severity:** High
 - **Why:** The frontend and API are on unrelated sites, so the auth cookie is a third-party cookie. Safari blocks these by default and other browsers block them in private modes and are restricting them further; for those users login appears to succeed and then every request is 401. No cookie `domain` is set (host-only), which is correct.
-- **Fix (pick one, owner decision):** (a) add a Vercel rewrite `/api/:path*` → the Render service so the browser sees one origin, then use `SameSite=Lax` and `VITE_API_BASE_URL=/api` (also removes most CORS and CSRF exposure — SEC-05); or (b) put both behind one custom domain (`app.` / `api.`) with `SameSite=Lax`. Option (a) is a `vercel.json` routing change, not a UI change.
+- **Fix — decided 2026-11-11: proxy `/api` through Vercel.** Add a Vercel rewrite `/api/:path*` → `<new Render URL>/api/:path*`, placed **before** the existing catch-all SPA rewrite in `vercel.json`; set `VITE_API_BASE_URL=/api` in Vercel; switch the cookie to `SameSite=Lax` (+ `Secure` in production). The browser then sees one origin, which also removes most CORS and CSRF exposure (SEC-05). This is a routing change, not a UI change. It cannot be made until the new Render service URL exists. Consequences to handle in the same work: the backend sees Vercel's proxy as the client, so `trust proxy` and rate limiting must use the forwarded address (DEP-07, SEC-06); local dev keeps calling `http://localhost:3005/api` directly, where `SameSite=Lax` works because both are `localhost`. (The rejected alternative was a custom domain with `app.`/`api.` subdomains.)
 
 ### DEP-05 — CORS allows exactly one production origin
 - **Where:** `Nexus/app.js:15-20`
@@ -419,7 +419,7 @@ Each step is small enough for its own branch and commit(s). Contract-affecting s
 
 **Step 0 — Owner actions before any code (no code change)**
 1. Generate a new strong `JWT_SECRET` for the new Render service; set `NODE_ENV=production`, `CLIENT_URL`, `MONGO_URI`, `PORT` is provided by Render (SEC-10, DEP-06).
-2. Decide the cookie strategy: Vercel `/api` proxy vs custom domain (DEP-04).
+2. ~~Decide the cookie strategy~~ — decided: Vercel `/api` proxy (DEP-04). Remaining owner action: create the Render service and share its URL so the rewrite can be added.
 3. Confirm whether the old database is still in use; if so check for the ten sample accounts (SEC-15, DEP-08).
 4. Approve the dependency additions this plan needs: test runner + in-memory MongoDB, rate limiter, `helmet`.
 
