@@ -49,3 +49,6 @@ No endpoint, status code or response shape changed, so there is no ML entry. The
   - Contact treats any 2xx as success (was 200/201 only; the server sends 201).
   - M-19: the never-rendered `TournamentRegisterForm` sends only the contract fields `{ teamName, players: [] }`; the server rejected its old body too.
   - Ids in paths are URL-encoded (no effect on ObjectIds).
+- **Finished (2026-11-12):** `App` and `main` moved to TypeScript (`index.html` now loads `/src/main.tsx`; it is the only change to that file), `allowJs` is gone from `tsconfig.json`, and the tests, MSW mocks, Playwright specs and `playwright.config` are TypeScript too (`tests/tsconfig.json`, part of `npm run typecheck`). No assertion changed and no baseline was re-recorded: 96 of 97 screenshots pass, and the one failure is `admin-tournament-delete-dialog` (desktop), which fails the same way on the commit before.
+  - Fixed: msw 3 renamed `onUnhandledRequest` to `onUnhandledFrame`, so the unit tests' "an unmocked request fails the test" guard had been off. It is back on; all 102 tests still pass.
+  - Still open: ESLint lints only `.js`/`.jsx`, so no TypeScript file is linted. Linting them needs `typescript-eslint` (a new dev dependency; check it supports TypeScript 7 first).
