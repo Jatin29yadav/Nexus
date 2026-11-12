@@ -33,8 +33,9 @@ export const signAuthToken = (userId: Types.ObjectId | string, tokenVersion = 0)
 
 // Throws on a bad signature, an expired token, or any algorithm other than
 // the one we sign with (SEC-09). A token whose payload is a plain string has
-// no claims.
-export const verifyAuthToken = (token: string): AuthTokenClaims => {
+// no claims. A token that is not a string fails the way jsonwebtoken fails it.
+export const verifyAuthToken = (token: unknown): AuthTokenClaims => {
+  if (typeof token !== "string") throw new jwt.JsonWebTokenError("jwt must be a string");
   const decoded = jwt.verify(token, secret(), { algorithms: [ALGORITHM] });
   if (typeof decoded === "string") return {};
   const claims: Record<string, unknown> = decoded;
