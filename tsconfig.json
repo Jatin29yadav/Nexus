@@ -17,8 +17,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "sourceMap": true,
-    "allowJs": true // temporary, while src/ is being converted
+    "sourceMap": true
   },
   "include": ["src"]
 }
