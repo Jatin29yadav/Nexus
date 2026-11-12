@@ -1,17 +1,25 @@
-const mongoose = require("mongoose");
-const { Booking } = require("../models/Booking");
-const { Station } = require("../models/Station");
-const { Tournament } = require("../models/Tournament");
+import mongoose, { type FilterQuery } from "mongoose";
+import { Booking } from "../models/Booking";
+import { Station } from "../models/Station";
+import { Tournament } from "../models/Tournament";
+import { currentUser } from "../middleware";
+import { isRecord } from "../utils/narrow";
+import type { IStation } from "../types/domain";
+import type { UserDocument } from "../models/User";
+import type { ApiHandler, ParamsDictionary } from "../types/api";
+import type { BookingBody, BookingParams, TimeWindow, UpdateBookingBody } from "../types/requests";
 
 const PRICE_PER_PLAYER_HOUR = 100;
 
 // SEC-03: the price is always computed here, never taken from the client.
-const priceFor = (membersCount, bookingTime) => {
-  const hours = (new Date(bookingTime.end) - new Date(bookingTime.start)) / (60 * 60 * 1000);
+const priceFor = (membersCount: number | undefined, bookingTime: TimeWindow): number => {
+  const hours =
+    (new Date(bookingTime.end).getTime() - new Date(bookingTime.start).getTime()) /
+    (60 * 60 * 1000);
   return Math.round((membersCount || 1) * hours * PRICE_PER_PLAYER_HOUR);
 };
 
-const findClashingTournament = (bookingTime) =>
+const findClashingTournament = (bookingTime: TimeWindow) =>
   Tournament.findOne({
     // Operators written by us, not the client: mark them trusted (sanitizeFilter).
     status: mongoose.trusted({ $in: ["Upcoming", "Registration Open", "Live"] }),
@@ -19,20 +27,21 @@ const findClashingTournament = (bookingTime) =>
     "eventTime.end": mongoose.trusted({ $gt: new Date(bookingTime.start) }),
   });
 
-const releaseStations = (filter) =>
+const releaseStations = (filter: FilterQuery<IStation>) =>
   Station.updateMany(filter, {
     $set: { status: "Available", assignedUser: null, activeBooking: null },
   });
 
 // SEC-17: the single ownership rule for bookings. Works whether `booking.user`
 // is an ObjectId or a populated user document.
-const isOwnerOrAdmin = (booking, user) => {
+const isOwnerOrAdmin = (booking: { user: unknown }, user: UserDocument): boolean => {
   if (user.role === "Admin") return true;
-  const ownerId = booking.user && booking.user._id ? booking.user._id : booking.user;
+  const owner = booking.user;
+  const ownerId = isRecord(owner) && owner._id ? owner._id : owner;
   return String(ownerId) === String(user._id);
 };
 
-module.exports.createBooking = async (req, res) => {
+export const createBooking: ApiHandler<ParamsDictionary, BookingBody> = async (req, res) => {
   try {
     // req.body has been validated and stripped by bookingSchema.
     const {
@@ -45,6 +54,7 @@ module.exports.createBooking = async (req, res) => {
       bookingTime,
       stations,
     } = req.body;
+    const user = currentUser(req);
 
     const clashingTournament = await findClashingTournament(bookingTime);
 
@@ -56,7 +66,7 @@ module.exports.createBooking = async (req, res) => {
     }
 
     const newBooking = new Booking({
-      user: req.user._id,
+      user: user._id,
       stations: stations,
       name,
       email,
@@ -75,7 +85,7 @@ module.exports.createBooking = async (req, res) => {
       {
         $set: {
           status: "Occupied",
-          assignedUser: req.user._id,
+          assignedUser: user._id,
           activeBooking: newBooking._id,
         },
       },
@@ -101,27 +111,28 @@ module.exports.createBooking = async (req, res) => {
       message: "Deployment Confirmed!",
       booking: newBooking,
     });
-  } catch (error) {
+  } catch {
     return res
       .status(500)
       .json({ success: false, message: "Something went wrong while booking!" });
   }
 };
 
-module.exports.getAllBookings = async (req, res) => {
+export const getAllBookings: ApiHandler = async (req, res) => {
   try {
+    const user = currentUser(req);
     // SEC-01: customers only ever see their own bookings; admins see all.
-    const filter = req.user.role === "Admin" ? {} : { user: req.user._id };
+    const filter = user.role === "Admin" ? {} : { user: user._id };
     const bookings = await Booking.find(filter)
       .populate("user", "username email")
       .sort({ createdAt: -1 });
     return res.status(200).json({ success: true, bookings });
-  } catch (err) {
+  } catch {
     return res.status(500).json({ success: false, message: "Sync Error." });
   }
 };
 
-module.exports.getBookingById = async (req, res) => {
+export const getBookingById: ApiHandler<BookingParams> = async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.bookingId).populate(
       "user",
@@ -130,24 +141,24 @@ module.exports.getBookingById = async (req, res) => {
     if (!booking)
       return res.status(404).json({ success: false, message: "Not found" });
 
-    if (!isOwnerOrAdmin(booking, req.user)) {
+    if (!isOwnerOrAdmin(booking, currentUser(req))) {
       return res
         .status(403)
         .json({ success: false, message: "Forbidden Access." });
     }
     return res.status(200).json({ success: true, booking });
-  } catch (error) {
+  } catch {
     return res.status(500).json({ success: false, message: "Error." });
   }
 };
 
-module.exports.cancelBooking = async (req, res) => {
+export const cancelBooking: ApiHandler<BookingParams> = async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.bookingId);
     if (!booking)
       return res.status(404).json({ success: false, message: "Not found." });
 
-    if (!isOwnerOrAdmin(booking, req.user)) {
+    if (!isOwnerOrAdmin(booking, currentUser(req))) {
       return res.status(403).json({ success: false, message: "Unauthorized." });
     }
 
@@ -158,18 +169,18 @@ module.exports.cancelBooking = async (req, res) => {
     return res
       .status(200)
       .json({ success: true, message: "Deployment Aborted." });
-  } catch (error) {
+  } catch {
     return res.status(500).json({ success: false, message: "Delete failed." });
   }
 };
 
-module.exports.updateBooking = async (req, res) => {
+export const updateBooking: ApiHandler<BookingParams, UpdateBookingBody> = async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.bookingId);
     if (!booking)
       return res.status(404).json({ success: false, message: "Not found" });
 
-    if (!isOwnerOrAdmin(booking, req.user)) {
+    if (!isOwnerOrAdmin(booking, currentUser(req))) {
       return res.status(403).json({ success: false, message: "Forbidden." });
     }
 
@@ -183,7 +194,8 @@ module.exports.updateBooking = async (req, res) => {
           message: `Cafe is reserved for '${clashingTournament.title}'.`,
         });
       }
-      booking.bookingTime = bookingTime;
+      // The ISO strings are cast to Dates by mongoose, as plain assignment did.
+      booking.set("bookingTime", bookingTime);
       booking.totalAmount = priceFor(booking.membersCount, bookingTime);
     }
 
@@ -191,7 +203,7 @@ module.exports.updateBooking = async (req, res) => {
     return res
       .status(200)
       .json({ success: true, message: "Re-calibrated!", booking });
-  } catch (error) {
+  } catch {
     return res.status(500).json({ success: false, message: "Update failed." });
   }
 };

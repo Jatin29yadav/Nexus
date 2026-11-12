@@ -1,6 +1,8 @@
-const { Message } = require("../models/Message");
+import { Message } from "../models/Message";
+import type { ApiHandler, ParamsDictionary } from "../types/api";
+import type { MessageBody, MessageParams } from "../types/requests";
 
-module.exports.contactMessage = async (req, res) => {
+export const contactMessage: ApiHandler<ParamsDictionary, MessageBody> = async (req, res) => {
   try {
     const { name, email, phone, subject, message } = req.body;
 
@@ -27,7 +29,7 @@ module.exports.contactMessage = async (req, res) => {
   }
 };
 
-module.exports.getAllMessages = async (req, res) => {
+export const getAllMessages: ApiHandler = async (req, res) => {
   try {
     const messages = await Message.find().sort({ createdAt: -1 });
     return res.status(200).json({ success: true, messages });
@@ -39,7 +41,7 @@ module.exports.getAllMessages = async (req, res) => {
   }
 };
 
-module.exports.markMessageRead = async (req, res) => {
+export const markMessageRead: ApiHandler<MessageParams> = async (req, res) => {
   try {
     const msg = await Message.findByIdAndUpdate(
       req.params.id,
@@ -55,14 +57,14 @@ module.exports.markMessageRead = async (req, res) => {
     return res
       .status(200)
       .json({ success: true, message: "Marked as Read", data: msg });
-  } catch (err) {
+  } catch {
     return res
       .status(500)
       .json({ success: false, message: "Error updating status" });
   }
 };
 
-module.exports.deleteMessage = async (req, res) => {
+export const deleteMessage: ApiHandler<MessageParams> = async (req, res) => {
   try {
     const msg = await Message.findByIdAndDelete(req.params.id);
 
@@ -74,7 +76,7 @@ module.exports.deleteMessage = async (req, res) => {
     return res
       .status(200)
       .json({ success: true, message: "Transmission deleted" });
-  } catch (err) {
+  } catch {
     return res
       .status(500)
       .json({ success: false, message: "Error deleting transmission" });

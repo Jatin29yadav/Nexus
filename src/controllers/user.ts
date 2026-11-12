@@ -1,8 +1,11 @@
-const { User } = require("../models/User");
-const { signAuthToken } = require("../utils/authToken");
-const { setAuthCookie, clearAuthCookie } = require("../utils/authCookie");
-const bcrypt = require("bcryptjs");
-const { userForToken } = require("../middleware");
+import bcrypt from "bcryptjs";
+import { User, type UserDocument } from "../models/User";
+import { signAuthToken } from "../utils/authToken";
+import { setAuthCookie, clearAuthCookie } from "../utils/authCookie";
+import { currentUser, tokenCookie, userForToken } from "../middleware";
+import { isRecord, messageOf } from "../utils/narrow";
+import type { ApiHandler, ParamsDictionary } from "../types/api";
+import type { LoginBody, RegisterBody, WishlistBody } from "../types/requests";
 
 // Compared against when the email is unknown, so "no such user" costs the same
 // bcrypt round as "wrong password" and cannot be told apart by timing.
@@ -10,7 +13,7 @@ const DUMMY_HASH = bcrypt.hashSync("nexus-timing-equaliser", 10);
 
 // What login and register return. Includes `role` and `phone` so the client
 // knows straight away whether this is an admin (ML-011), without a reload.
-const sessionUser = (user) => ({
+const sessionUser = (user: UserDocument) => ({
   _id: user._id,
   email: user.email,
   username: user.username,
@@ -18,7 +21,7 @@ const sessionUser = (user) => ({
   role: user.role,
 });
 
-module.exports.registerUser = async (req, res) => {
+export const registerUser: ApiHandler<ParamsDictionary, RegisterBody> = async (req, res) => {
   try {
     const { username, email, phone, password } = req.body;
 
@@ -43,9 +46,10 @@ module.exports.registerUser = async (req, res) => {
       user: sessionUser(user),
     });
   } catch (error) {
+    const fields = isRecord(error) ? error : {};
     // SEC-12: fixed messages only; the original error stays in the server log.
-    if (error.code === 11000) {
-      const field = Object.keys(error.keyPattern || {})[0];
+    if (fields.code === 11000) {
+      const field = Object.keys(isRecord(fields.keyPattern) ? fields.keyPattern : {})[0];
       return res.status(422).json({
         success: false,
         message:
@@ -54,21 +58,23 @@ module.exports.registerUser = async (req, res) => {
             : "User already exists with this email",
       });
     }
-    if (error.name === "ValidationError") {
+    if (fields.name === "ValidationError") {
       return res
         .status(400)
         .json({ success: false, message: "Invalid registration details." });
     }
-    console.error("Register failed:", error.message);
+    console.error("Register failed:", messageOf(error));
     return res.status(500).json({
       success: false,
       message:
-        error.statusCode === 500 ? error.message : "Server error during registration",
+        fields.statusCode === 500 && typeof fields.message === "string"
+          ? fields.message
+          : "Server error during registration",
     });
   }
 };
 
-module.exports.loginUser = async (req, res) => {
+export const loginUser: ApiHandler<ParamsDictionary, LoginBody> = async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -98,7 +104,7 @@ module.exports.loginUser = async (req, res) => {
       user: sessionUser(user),
     });
   } catch (error) {
-    console.error("Login failed:", error.message);
+    console.error("Login failed:", messageOf(error));
     return res.status(500).json({
       success: false,
       message: "Server error during login",
@@ -106,16 +112,17 @@ module.exports.loginUser = async (req, res) => {
   }
 };
 
-module.exports.logoutUser = async (req, res) => {
+export const logoutUser: ApiHandler = async (req, res) => {
   // SEC-09: revoke server-side, not just in this browser. Bumping tokenVersion
   // invalidates every token issued to this user so far (all devices). Logout
   // itself always succeeds, with or without a valid token.
   try {
-    const user = req.cookies.token ? await userForToken(req.cookies.token) : null;
+    const token = tokenCookie(req);
+    const user = token ? await userForToken(token) : null;
     if (user) {
       await User.updateOne({ _id: user._id }, { $inc: { tokenVersion: 1 } });
     }
-  } catch (error) {
+  } catch {
     // Invalid, expired or already revoked token: nothing left to revoke.
   }
 
@@ -126,9 +133,9 @@ module.exports.logoutUser = async (req, res) => {
   });
 };
 
-module.exports.getUserProfile = async (req, res) => {
+export const getUserProfile: ApiHandler = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).populate({
+    const user = await User.findById(currentUser(req)._id).populate({
       path: "bookings",
       populate: { path: "assignedStation", select: "stationId type" },
     });
@@ -140,14 +147,14 @@ module.exports.getUserProfile = async (req, res) => {
     }
 
     return res.status(200).json({ success: true, user });
-  } catch (error) {
+  } catch {
     return res
       .status(500)
       .json({ success: false, message: "Error fetching profile" });
   }
 };
 
-module.exports.toggleWishlist = async (req, res) => {
+export const toggleWishlist: ApiHandler<ParamsDictionary, WishlistBody> = async (req, res) => {
   try {
     const { stationId } = req.body;
 
@@ -157,7 +164,9 @@ module.exports.toggleWishlist = async (req, res) => {
         .json({ success: false, message: "Station ID is required" });
     }
 
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(currentUser(req)._id);
+    // A deleted account: the same 500 that reading user.wishlist on null gave.
+    if (!user) throw new Error("toggleWishlist: user not found");
 
     const isWishlisted = user.wishlist.includes(stationId);
 
@@ -174,7 +183,7 @@ module.exports.toggleWishlist = async (req, res) => {
     return res
       .status(200)
       .json({ success: true, message, wishlist: user.wishlist });
-  } catch (error) {
+  } catch {
     return res
       .status(500)
       .json({ success: false, message: "Error updating wishlist" });

@@ -3,7 +3,7 @@
 import type { Request, RequestHandler } from "express";
 
 /** Express's default params type ({ [name]: string }). */
-type ParamsDictionary = Request["params"];
+export type ParamsDictionary = Request["params"];
 
 export interface ApiResponse {
   success: boolean;

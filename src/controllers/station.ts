@@ -1,6 +1,7 @@
-const { Station } = require("../models/Station");
+import { Station } from "../models/Station";
+import type { ApiHandler } from "../types/api";
 
-module.exports.getAllStations = async (req, res) => {
+export const getAllStations: ApiHandler = async (req, res) => {
   try {
     // SEC-22: public endpoint. Only what the seat map reads; never who holds
     // a station or which booking it belongs to.
@@ -10,7 +11,7 @@ module.exports.getAllStations = async (req, res) => {
       .lean();
 
     return res.status(200).json({ success: true, stations });
-  } catch (error) {
+  } catch {
     return res
       .status(500)
       .json({ success: false, message: "Error loading seat map data" });

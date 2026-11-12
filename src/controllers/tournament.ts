@@ -1,20 +1,37 @@
-const mongoose = require("mongoose");
-const { Tournament } = require("../models/Tournament");
+import mongoose, { type Types } from "mongoose";
+import { Tournament, type TournamentDocument } from "../models/Tournament";
+import { currentUser } from "../middleware";
+import type { UserDocument } from "../models/User";
+import type { ITournament } from "../types/domain";
+import type { ApiHandler, ParamsDictionary } from "../types/api";
+import type {
+  CreateTournamentBody,
+  TeamParams,
+  TeamRegistrationBody,
+  TeamStatusBody,
+  TournamentParams,
+  UpdateTournamentBody,
+} from "../types/requests";
 
 // SEC-02: rosters (player names, in-game ids, phone numbers) and captain ids
 // are served to admins only. Everyone else gets what the public pages read.
-const forCaller = (tournament, user) => {
+const forCaller = (tournament: TournamentDocument, user: UserDocument | null | undefined) => {
   if (user && user.role === "Admin") return tournament;
   const view = tournament.toObject();
-  view.registeredTeams = view.registeredTeams.map(({ _id, teamName, status }) => ({
-    _id,
-    teamName,
-    status,
-  }));
-  return view;
+  return {
+    ...view,
+    registeredTeams: view.registeredTeams.map(({ _id, teamName, status }) => ({
+      _id,
+      teamName,
+      status,
+    })),
+  };
 };
 
-module.exports.createTournament = async (req, res) => {
+export const createTournament: ApiHandler<ParamsDictionary, CreateTournamentBody> = async (
+  req,
+  res,
+) => {
   try {
     const { title, game, description, eventTime, maxTeams } = req.body;
 
@@ -28,14 +45,14 @@ module.exports.createTournament = async (req, res) => {
 
     await newTournament.save();
     return res.status(201).json({ success: true, tournament: newTournament });
-  } catch (error) {
+  } catch {
     return res
       .status(500)
       .json({ success: false, message: "Error creating tournament" });
   }
 };
 
-module.exports.getTournamentById = async (req, res) => {
+export const getTournamentById: ApiHandler<TournamentParams> = async (req, res) => {
   try {
     const tournament = await Tournament.findById(req.params.tournamentId);
     if (!tournament) {
@@ -46,31 +63,35 @@ module.exports.getTournamentById = async (req, res) => {
     return res
       .status(200)
       .json({ success: true, tournament: forCaller(tournament, req.user) });
-  } catch (error) {
+  } catch {
     return res
       .status(500)
       .json({ success: false, message: "Error fetching tournament details" });
   }
 };
 
-module.exports.getAllTournaments = async (req, res) => {
+export const getAllTournaments: ApiHandler = async (req, res) => {
   try {
     const tournaments = await Tournament.find().sort({ "eventTime.start": 1 });
     return res.status(200).json({
       success: true,
       tournaments: tournaments.map((t) => forCaller(t, req.user)),
     });
-  } catch (error) {
+  } catch {
     return res
       .status(500)
       .json({ success: false, message: "Error fetching tournaments" });
   }
 };
 
-const CLOSED_STATUSES = ["Completed", "Cancelled"];
+const CLOSED_STATUSES: ITournament["status"][] = ["Completed", "Cancelled"];
 
 // Why a registration cannot go ahead, or null when it can.
-const registrationProblem = (tournament, userId, teamName) => {
+const registrationProblem = (
+  tournament: Pick<ITournament, "status" | "registeredTeams" | "maxTeams">,
+  userId: Types.ObjectId,
+  teamName: string,
+): string | null => {
   if (CLOSED_STATUSES.includes(tournament.status)) {
     return "Registration is closed for this tournament";
   }
@@ -83,10 +104,14 @@ const registrationProblem = (tournament, userId, teamName) => {
   return taken ? "You or this team name are already registered" : null;
 };
 
-module.exports.registerTeam = async (req, res) => {
+export const registerTeam: ApiHandler<TournamentParams, TeamRegistrationBody> = async (
+  req,
+  res,
+) => {
   try {
     const { tournamentId } = req.params;
     const { teamName, players } = req.body; // validated by teamRegistrationSchema
+    const user = currentUser(req);
 
     const tournament = await Tournament.findById(tournamentId);
     if (!tournament) {
@@ -95,7 +120,7 @@ module.exports.registerTeam = async (req, res) => {
         .json({ success: false, message: "Tournament not found" });
     }
 
-    const problem = registrationProblem(tournament, req.user._id, teamName);
+    const problem = registrationProblem(tournament, user._id, teamName);
     if (problem) {
       return res.status(400).json({ success: false, message: problem });
     }
@@ -106,11 +131,11 @@ module.exports.registerTeam = async (req, res) => {
       {
         _id: tournamentId,
         status: mongoose.trusted({ $nin: CLOSED_STATUSES }),
-        "registeredTeams.captain": mongoose.trusted({ $ne: req.user._id }),
+        "registeredTeams.captain": mongoose.trusted({ $ne: user._id }),
         "registeredTeams.teamName": mongoose.trusted({ $ne: teamName }),
         $expr: mongoose.trusted({ $lt: [{ $size: "$registeredTeams" }, "$maxTeams"] }),
       },
-      { $push: { registeredTeams: { teamName, captain: req.user._id, players } } },
+      { $push: { registeredTeams: { teamName, captain: user._id, players } } },
       { new: true, runValidators: true },
     );
 
@@ -118,7 +143,7 @@ module.exports.registerTeam = async (req, res) => {
       // Lost the race: report what is true now.
       const current = await Tournament.findById(tournamentId);
       const reason = current
-        ? registrationProblem(current, req.user._id, teamName)
+        ? registrationProblem(current, user._id, teamName)
         : "Tournament not found";
       return res.status(current ? 400 : 404).json({
         success: false,
@@ -127,7 +152,7 @@ module.exports.registerTeam = async (req, res) => {
     }
 
     const registeredTeam = updated.registeredTeams.find(
-      (t) => t.captain.toString() === req.user._id.toString(),
+      (t) => t.captain.toString() === user._id.toString(),
     );
 
     return res.status(201).json({
@@ -135,7 +160,7 @@ module.exports.registerTeam = async (req, res) => {
       message: "Team registered successfully",
       team: registeredTeam,
     });
-  } catch (error) {
+  } catch {
     return res
       .status(500)
       .json({ success: false, message: "Error registering team" });
@@ -143,7 +168,7 @@ module.exports.registerTeam = async (req, res) => {
 };
 
 // UPDATE OR REJECT: Approve or Delete a Registered Team
-module.exports.updateTeamStatus = async (req, res) => {
+export const updateTeamStatus: ApiHandler<TeamParams, TeamStatusBody> = async (req, res) => {
   try {
     const { tournamentId, teamId } = req.params;
     const { status } = req.body; // "Approved" or "Rejected"
@@ -192,7 +217,7 @@ module.exports.updateTeamStatus = async (req, res) => {
   }
 };
 
-module.exports.deleteTournament = async (req, res) => {
+export const deleteTournament: ApiHandler<TournamentParams> = async (req, res) => {
   try {
     const { tournamentId } = req.params;
 
@@ -208,14 +233,17 @@ module.exports.deleteTournament = async (req, res) => {
       success: true,
       message: "Tournament deleted successfully. All time slots are now free!",
     });
-  } catch (error) {
+  } catch {
     return res
       .status(500)
       .json({ success: false, message: "Error deleting tournament" });
   }
 };
 
-module.exports.updateTournament = async (req, res) => {
+export const updateTournament: ApiHandler<TournamentParams, UpdateTournamentBody> = async (
+  req,
+  res,
+) => {
   try {
     // req.body was validated by updateTournamentSchema: known fields only.
     const updatedTournament = await Tournament.findByIdAndUpdate(

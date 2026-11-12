@@ -1,9 +1,11 @@
-const mongoose = require("mongoose");
-const { Station } = require("../models/Station");
-const { Booking } = require("../models/Booking");
-const { User } = require("../models/User");
+import mongoose from "mongoose";
+import { Station } from "../models/Station";
+import { Booking } from "../models/Booking";
+import { User } from "../models/User";
+import type { ApiHandler } from "../types/api";
+import type { BookingParams, StationParams, StationStatusBody } from "../types/requests";
 
-module.exports.getDashboardData = async (req, res) => {
+export const getDashboardData: ApiHandler = async (req, res) => {
   try {
     const [stations, activeBookings, userCount] = await Promise.all([
       Station.find(),
@@ -21,14 +23,17 @@ module.exports.getDashboardData = async (req, res) => {
         totalGamers: userCount,
       },
     });
-  } catch (error) {
+  } catch {
     return res
       .status(500)
       .json({ success: false, message: "Error fetching God Eye data" });
   }
 };
 
-module.exports.updateStationStatus = async (req, res) => {
+export const updateStationStatus: ApiHandler<StationParams, StationStatusBody> = async (
+  req,
+  res,
+) => {
   try {
     const { stationId } = req.params;
     const { status } = req.body;
@@ -48,14 +53,14 @@ module.exports.updateStationStatus = async (req, res) => {
       message: `${station.stationId} is now marked as ${status}`,
       station,
     });
-  } catch (error) {
+  } catch {
     return res
       .status(500)
       .json({ success: false, message: "Error updating station status" });
   }
 };
 
-module.exports.adminCancelBooking = async (req, res) => {
+export const adminCancelBooking: ApiHandler<BookingParams> = async (req, res) => {
   try {
     const { bookingId } = req.params;
     const booking = await Booking.findById(bookingId);
@@ -86,7 +91,7 @@ module.exports.adminCancelBooking = async (req, res) => {
       success: true,
       message: "Admin forcefully cancelled the booking. Units are now free.",
     });
-  } catch (error) {
+  } catch {
     return res
       .status(500)
       .json({ success: false, message: "Error cancelling booking" });
