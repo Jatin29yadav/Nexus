@@ -1,23 +1,24 @@
-const express = require("express");
-const app = express();
+import express from "express";
+import cors from "cors";
+import helmet from "helmet";
+import cookieParser from "cookie-parser";
+import mongoose from "mongoose";
+import type { RequestHandler } from "express";
+import { rejectOperators } from "./utils/rejectOperators";
+import { csrfGuard } from "./utils/csrfGuard";
+import { errorHandler } from "./utils/errorHandler";
+import { allowedOrigins } from "./config/origins";
+import { apiLimiter } from "./config/rateLimits";
+import { ExpressError } from "./utils/expressError";
 
-const cors = require("cors");
-const helmet = require("helmet");
-const cookieParser = require("cookie-parser");
-const mongoose = require("mongoose");
-const { rejectOperators } = require("./utils/rejectOperators");
-const { csrfGuard } = require("./utils/csrfGuard");
-const { errorHandler } = require("./utils/errorHandler");
-const { allowedOrigins } = require("./config/origins.js");
-const { apiLimiter } = require("./config/rateLimits.js");
-const { ExpressError } = require("./utils/expressError");
+import { userRouter } from "./routes/user";
+import { messageRouter } from "./routes/message";
+import { tournamentRouter } from "./routes/tournament";
+import { bookingRouter } from "./routes/booking";
+import { adminRouter } from "./routes/admin";
+import { stationRouter } from "./routes/station";
 
-const { userRouter } = require("./routes/user");
-const { messageRouter } = require("./routes/message");
-const { tournamentRouter } = require("./routes/tournament");
-const { bookingRouter } = require("./routes/booking");
-const { adminRouter } = require("./routes/admin");
-const { stationRouter } = require("./routes/station");
+export const app = express();
 
 // Behind Render's proxy (and later Vercel's /api rewrite) the client address is
 // in X-Forwarded-For. TRUST_PROXY = number of proxy hops in front of the app;
@@ -54,7 +55,7 @@ app.use(
 
 // Liveness/readiness for Render's health check. No auth, no rate limit, and
 // nothing about the deployment beyond "is the database connected".
-const health = (req, res) => {
+const health: RequestHandler = (req, res) => {
   const databaseUp = mongoose.connection.readyState === 1;
   res
     .status(databaseUp ? 200 : 503)
@@ -84,5 +85,3 @@ app.use((req, res, next) => {
 });
 
 app.use(errorHandler);
-
-module.exports = app;

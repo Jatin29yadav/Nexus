@@ -1,6 +1,10 @@
 // Sample users for LOCAL DEVELOPMENT only. No passwords live in this file
-// (SEC-15): init/index.js assigns one at seed time.
-const sampleUsers = [
+// (SEC-15): init/index.ts assigns one at seed time.
+import type { IUser } from "../types/domain";
+
+export type SampleUser = Pick<IUser, "username" | "phone" | "email" | "role" | "wishlist" | "bookings">;
+
+const sampleUsers: SampleUser[] = [
   {
     username: "gamerpro99",
     phone: "9876543210",
@@ -83,4 +87,4 @@ const sampleUsers = [
   },
 ];
 
-module.exports = { data: sampleUsers };
+export const data = sampleUsers;

@@ -1,6 +1,9 @@
 // SEC-15: seed scripts write to whatever database MONGO_URI points at.
 // They refuse to run against production unless the operator opts in explicitly.
-function assertSafeToSeed(scriptName, env = process.env) {
+export function assertSafeToSeed(
+  scriptName: string,
+  env: Record<string, string | undefined> = process.env,
+): void {
   if (!env.MONGO_URI) {
     throw new Error(`${scriptName}: MONGO_URI is not set.`);
   }
@@ -11,5 +14,3 @@ function assertSafeToSeed(scriptName, env = process.env) {
     );
   }
 }
-
-module.exports = { assertSafeToSeed };

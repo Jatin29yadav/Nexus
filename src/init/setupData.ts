@@ -1,13 +1,14 @@
-// init/setupData.js
-const mongoose = require("mongoose");
-const { Setup } = require("../models/Setup");
+// init/setupData.ts
+import mongoose from "mongoose";
+import { Setup } from "../models/Setup";
+import type { ISetup } from "../types/domain";
 
 // Legacy script (the Setup model is unused). Guarded like the other seeds.
 if (process.env.NODE_ENV === "production") {
-  throw new Error("init/setupData.js: refusing to run with NODE_ENV=production.");
+  throw new Error("init/setupData.ts: refusing to run with NODE_ENV=production.");
 }
 
-const setupData = [
+const setupData: Array<Pick<ISetup, "name" | "type" | "isActive">> = [
   { name: "PC-1", type: "PC", isActive: true },
   { name: "PC-2", type: "PC", isActive: true },
   { name: "PC-3", type: "PC", isActive: true },
@@ -15,7 +16,7 @@ const setupData = [
   { name: "VR-2", type: "VR", isActive: true },
 ];
 
-async function initSetupDB() {
+async function initSetupDB(): Promise<void> {
   await mongoose.connect("mongodb://127.0.0.1:27017/Nexus");
   console.log("Connected to DB ✅");
 
@@ -26,6 +27,6 @@ async function initSetupDB() {
   mongoose.connection.close();
 }
 
-initSetupDB().catch((err) =>
+initSetupDB().catch((err: unknown) =>
   console.error("Error initializing setup data:", err)
 );
