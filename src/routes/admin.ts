@@ -1,14 +1,16 @@
-const express = require("express");
-const router = express.Router();
-const {
+import { Router } from "express";
+import {
   getDashboardData,
   updateStationStatus,
   adminCancelBooking,
-} = require("../controllers/admin");
-const { isLoggedIn, isAdmin } = require("../middleware");
-const { validate } = require("../utils/validate");
-const { validateObjectId } = require("../utils/validateObjectId");
-const { stationStatusSchema } = require("../validations/zodSchemas");
+} from "../controllers/admin";
+import { isLoggedIn, isAdmin } from "../middleware";
+import { validate } from "../utils/validate";
+import { validateObjectId } from "../utils/validateObjectId";
+import { stationStatusSchema } from "../validations/zodSchemas";
+
+export const adminRouter = Router();
+const router = adminRouter;
 
 router.param("stationId", validateObjectId);
 router.param("bookingId", validateObjectId);
@@ -28,5 +30,3 @@ router.put(
   isAdmin,
   adminCancelBooking,
 );
-
-module.exports = router;

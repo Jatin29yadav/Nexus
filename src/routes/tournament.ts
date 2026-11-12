@@ -1,6 +1,5 @@
-const express = require("express");
-const router = express.Router();
-const {
+import { Router } from "express";
+import {
   createTournament,
   getAllTournaments,
   getTournamentById,
@@ -8,16 +7,19 @@ const {
   registerTeam,
   updateTeamStatus,
   deleteTournament,
-} = require("../controllers/tournament");
-const { isLoggedIn, isAdmin, optionalAuth } = require("../middleware");
-const { validate } = require("../utils/validate");
-const { validateObjectId } = require("../utils/validateObjectId");
-const {
+} from "../controllers/tournament";
+import { isLoggedIn, isAdmin, optionalAuth } from "../middleware";
+import { validate } from "../utils/validate";
+import { validateObjectId } from "../utils/validateObjectId";
+import {
   createTournamentSchema,
   updateTournamentSchema,
   teamRegistrationSchema,
   teamStatusSchema,
-} = require("../validations/zodSchemas");
+} from "../validations/zodSchemas";
+
+export const tournamentRouter = Router();
+const router = tournamentRouter;
 
 router.param("tournamentId", validateObjectId);
 router.param("teamId", validateObjectId);
@@ -52,5 +54,3 @@ router.put(
   updateTeamStatus,
 );
 router.delete("/:tournamentId", isLoggedIn, isAdmin, deleteTournament);
-
-module.exports = router;

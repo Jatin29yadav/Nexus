@@ -1,16 +1,18 @@
-const express = require("express");
-const router = express.Router();
-const {
+import { Router } from "express";
+import {
   createBooking,
   getAllBookings,
   getBookingById,
   updateBooking,
   cancelBooking,
-} = require("../controllers/booking");
-const { isLoggedIn } = require("../middleware");
-const { validate } = require("../utils/validate");
-const { validateObjectId } = require("../utils/validateObjectId");
-const { bookingSchema, updateBookingSchema } = require("../validations/zodSchemas");
+} from "../controllers/booking";
+import { isLoggedIn } from "../middleware";
+import { validate } from "../utils/validate";
+import { validateObjectId } from "../utils/validateObjectId";
+import { bookingSchema, updateBookingSchema } from "../validations/zodSchemas";
+
+export const bookingRouter = Router();
+const router = bookingRouter;
 
 router.use(isLoggedIn);
 router.param("bookingId", validateObjectId);
@@ -20,5 +22,3 @@ router.get("/", getAllBookings);
 router.get("/:bookingId", getBookingById);
 router.put("/:bookingId", validate({ body: updateBookingSchema }), updateBooking);
 router.delete("/:bookingId", cancelBooking);
-
-module.exports = router;
