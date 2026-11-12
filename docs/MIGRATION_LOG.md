@@ -34,3 +34,18 @@ Not a contract change: no endpoint, status code, message or response shape chang
 ### `TODO(ts)` items
 
 None. There is no `any` in `src/` or `tests/`. The only type assertions are on two test doubles (the error-handler request/response stubs in `tests/security/hardening.test.ts` and the delayed `findOneAndUpdate` spy in `tests/security/vulnerabilities.test.ts`), and non-null assertions on database lookups that a test expects to find.
+
+## Phase 5 — frontend logic in TypeScript (2026-11-12, branch `refactor/ts-frontend` in both repos)
+
+No endpoint, status code or response shape changed, so there is no ML entry. The backend-repo commit carries only these docs; the frontend commits on the same-named branch cite "Phase 5". The UI is frozen: the Playwright baselines passed after every batch without being re-recorded.
+
+- **One typed client:** `nexus-frontend/src/api/` replaces `useApi`'s raw axios instance and the separate axios calls in `AuthContext`. Base URL from `VITE_API_BASE_URL` only (read per request; fallback `http://localhost:3005/api`), credentials on every call, every failure an `ApiError`. `useApi()` stays as a hook returning the stable client. Types for every request and response of the contract are in `nexus-frontend/src/types/api.ts`; screen-specific shapes are produced by `src/api/mappers.ts` (populated-or-id `Booking.user` → always an object; admin rosters → always a `players` array; the legacy `"Pending"` booking and `"New"` message statuses stay in the view types because the frozen markup compares against them, M-09/M-18).
+- **No token refresh:** the backend has no refresh endpoint and SEC-09 kept 7-day cookies without one. Decided 2026-11-12: none is added in this phase.
+- **Behaviour changes, all logic-only:**
+  - M-23: a 401 from any call clears `user` in `AuthContext`, so protected screens go to `/login` instead of staying "logged in" with failing calls.
+  - M-18: AdminMessages no longer falls back to `data.data`; it reads `messages`.
+  - M-17: the create-tournament form sends `maxTeams` as a number.
+  - `AuthContext.logout()` sends no body (was `{}`), like the header's logout button; the contract says logout has no body.
+  - Contact treats any 2xx as success (was 200/201 only; the server sends 201).
+  - M-19: the never-rendered `TournamentRegisterForm` sends only the contract fields `{ teamName, players: [] }`; the server rejected its old body too.
+  - Ids in paths are URL-encoded (no effect on ObjectIds).

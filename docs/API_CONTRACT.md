@@ -258,7 +258,11 @@ Message = { _id, name, email, phone?, subject: string (default "No Subject"), me
 
 ## 2. Frontend API calls
 
-**Token handling (applies to every row):** the frontend never sees or stores the token. Calls made through `useApi` (`nexus-frontend/src/hooks/useApi.js:7-12`) or `AuthContext` send the cookie via `withCredentials: true`. On a 401 the `useApi` interceptor only writes a console warning (`:17-21`) — there is no redirect, no refresh and no clearing of `user`. The two exceptions (Contact, Profile) are called out below.
+**Since Phase 5 (branch `refactor/ts-frontend`) every call goes through one typed client**, `nexus-frontend/src/api/` (`client.ts` = transport, `index.ts` = one function per endpoint of §1, `mappers.ts` = wire → screen shapes), with the types in `nexus-frontend/src/types/api.ts`. The table below still lists each call by screen; its file:line references are from before that change, and the request bodies and fields read are unchanged except where noted in `docs/MIGRATION_LOG.md` → Phase 5.
+
+**Token handling (applies to every row):** the frontend never sees or stores the token. The client sends the cookie on every call (`withCredentials: true`) and no `Authorization` header. There is no token refresh (the backend has none, SEC-09). On a 401 from any call the client warns in the console and `AuthContext` clears `user` (M-23, resolved in Phase 5), so `ProtectedRoute` sends the visitor to `/login`. Failures reach the screens as an `ApiError` (`status`, `serverMessage` = the envelope's `message`); screens show `serverMessage` or their own fixed text, as before.
+
+*Before Phase 5:* calls made through `useApi` (`nexus-frontend/src/hooks/useApi.js:7-12`) or `AuthContext` sent the cookie via `withCredentials: true`. On a 401 the `useApi` interceptor only wrote a console warning (`:17-21`) — there was no redirect, no refresh and no clearing of `user`. The two exceptions (Contact, Profile) are called out below.
 
 All paths are relative to `nexus-frontend/src/`.
 
@@ -322,13 +326,13 @@ Severity here means impact on the user-facing app once the new backend is live.
 | M-14 | Medium | Public pages (F-12, F-14) read only `teamName`, `status` and the team count; admin page (F-21) needs full rosters from the **same** endpoint | Public endpoints return full rosters incl. phones | Fixing SEC-02 by trimming the public response would empty the admin roster | Return full rosters only when the caller is an admin (optional auth on the GET), or add an admin roster endpoint and switch F-21 to it |
 | M-15 | Medium | F-07 sends `totalAmount` computed as `players × hours × 100` (`components/HUDTimePicker.jsx:73`); F-11 recomputes with its own copy | Stores whatever is sent | Price is client-controlled | Backend computes and returns the amount; frontend value becomes display-only |
 | M-16 | Low | F-16 sends `selectedDate`, `startTime`, `endTime` | Ignored | None today; would be rejected by strict validation | Frontend: send only contract fields before strict validation is enabled |
-| M-17 | Low | F-13 may send `maxTeams` as a string | Mongoose casts it | None today; strict Zod `number` would reject | Coerce on the frontend or use `z.coerce.number()` |
-| M-18 | Low | F-24 treats `"New"` as unread and falls back to `data.data` | Status enum is `Unread`/`Read`; key is `messages` | None | Leave; remove the fallback when the API layer is centralised |
+| M-17 | Low | F-13 may send `maxTeams` as a string | Mongoose casts it | None today; strict Zod `number` would reject | Coerce on the frontend or use `z.coerce.number()` — **coerced on the frontend in Phase 5** |
+| M-18 | Low | F-24 treats `"New"` as unread and falls back to `data.data` | Status enum is `Unread`/`Read`; key is `messages` | None | Leave; remove the fallback when the API layer is centralised — **fallback removed in Phase 5**; the `"New"` comparison stays in the frozen markup |
 | M-19 | Low | F-18 payload has no `players` | Requires 5–6 players | Would always fail — but the component is never rendered | Delete the dead component (needs approval) |
 | M-20 | Low | F-07 always sends `membersName: [name]` (one entry) with `membersCount` up to the group size | Unused Zod schema requires a non-empty array only | None today | Keep as is; do not require `membersName.length === membersCount` |
 | M-21 | Low | No screen calls wishlist, station status or admin soft-cancel | Three endpoints exist | Unused surface | Keep documented; remove or wire up later |
 | M-22 | Low | `admin/AdminUsers` and `admin/AdminSettings` show hard-coded data | No user-management or settings endpoints | Screens are decorative | Out of scope until endpoints are designed |
-| M-23 | Low | 401 on any call only logs a console warning | Returns 401 when the cookie expires | An expired session leaves the UI in a "logged in" state with failing calls | Frontend: on 401 clear `user` in the context (existing `ProtectedRoute` then redirects) |
+| M-23 | Low | 401 on any call only logs a console warning | Returns 401 when the cookie expires | An expired session leaves the UI in a "logged in" state with failing calls | Frontend: on 401 clear `user` in the context (existing `ProtectedRoute` then redirects) — **done in Phase 5** (`src/api/client.ts` `onUnauthorized`) |
 | M-24 | Low | Old docs (`docs/api-reference.md`) describe `stationId`/`startTime`/`endTime` bookings and `totalUsers`/`totalBookings`/`activeStations` dashboard | Neither exists | Misleading for the revamp | This file replaces them |
 
 ---
