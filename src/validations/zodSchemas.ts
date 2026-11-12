@@ -1,4 +1,4 @@
-const { z } = require("zod");
+import { z } from "zod";
 
 // ── Shared pieces ───────────────────────────────────────────────────────
 const phone = z
@@ -6,7 +6,7 @@ const phone = z
   .trim()
   .regex(/^\+?[0-9\s\-()]{7,20}$/, "Phone number is not valid");
 
-const isoDate = (label) => z.iso.datetime({ offset: true, error: `Invalid ${label} time` });
+const isoDate = (label: string) => z.iso.datetime({ offset: true, error: `Invalid ${label} time` });
 
 const MAX_BOOKING_HOURS = 24;
 const timeWindow = z
@@ -16,23 +16,23 @@ const timeWindow = z
   )
   .refine((t) => new Date(t.end) > new Date(t.start), "End time must be after start time")
   .refine(
-    (t) => new Date(t.end) - new Date(t.start) <= MAX_BOOKING_HOURS * 60 * 60 * 1000,
+    (t) => new Date(t.end).getTime() - new Date(t.start).getTime() <= MAX_BOOKING_HOURS * 60 * 60 * 1000,
     `A booking cannot be longer than ${MAX_BOOKING_HOURS} hours`,
   );
 
 // ── Users ───────────────────────────────────────────────────────────────
 // SEC-04: every credential is a plain, bounded string before it reaches a query.
-const credential = (label, max) =>
+const credential = (label: string, max: number) =>
   z.string(`${label} is required`).min(1, `${label} is required`).max(max, `${label} is too long`);
 
-const loginSchema = z.object({
+export const loginSchema = z.object({
   email: credential("Email", 254),
   password: credential("Password", 128),
 });
 
 // SEC-11: registration policy. Login stays lenient on purpose so that accounts
 // created before this policy can still sign in.
-const registerSchema = z.object({
+export const registerSchema = z.object({
   username: z
     .string("Username is required")
     .trim()
@@ -50,7 +50,7 @@ const registerSchema = z.object({
 // ── Bookings ────────────────────────────────────────────────────────────
 // `totalAmount` is deliberately absent: the server computes it (SEC-03), and
 // unknown keys are stripped.
-const bookingSchema = z
+export const bookingSchema = z
   .object({
     name: z.string("Name is required").trim().min(2, "Name must be at least 2 characters").max(80, "Name is too long"),
     email: z.email("Invalid email format").max(254, "Email is too long"),
@@ -74,22 +74,22 @@ const bookingSchema = z
   .refine((b) => new Set(b.stations).size === b.stations.length, "A station was selected twice")
   .refine((b) => b.stations.length <= b.membersCount, "You cannot book more stations than players");
 
-const updateBookingSchema = z.object({
+export const updateBookingSchema = z.object({
   phone: phone.optional(),
   bookingTime: timeWindow.optional(),
 });
 
 // ── Admin actions ───────────────────────────────────────────────────────
-const stationStatusSchema = z.object({
+export const stationStatusSchema = z.object({
   status: z.enum(["Available", "Occupied", "Maintenance", "Offline"], "Invalid station status"),
 });
 
-const teamStatusSchema = z.object({
+export const teamStatusSchema = z.object({
   status: z.enum(["Pending", "Approved", "Rejected"], "Invalid team status"),
 });
 
 // A player's `email` is sent by the form but not stored (contract M-08): stripped.
-const playerValidation = z.object(
+export const playerValidation = z.object(
   {
     name: z.string("Player name is required").trim().min(2, "Player name must be at least 2 characters").max(80, "Player name is too long"),
     inGameId: z.string("In-game ID is required").trim().min(2, "In-game ID is required").max(80, "In-game ID is too long"),
@@ -98,7 +98,7 @@ const playerValidation = z.object(
   "Each player needs a name, in-game ID and phone number",
 );
 
-const teamRegistrationSchema = z.object({
+export const teamRegistrationSchema = z.object({
   teamName: z
     .string("Team name is required")
     .trim()
@@ -115,7 +115,7 @@ const eventWindow = z
   .object({ start: isoDate("start"), end: isoDate("end") }, "Event time is required")
   .refine((t) => new Date(t.end) > new Date(t.start), "End time must be after start time");
 
-const text = (label, max) =>
+const text = (label: string, max: number) =>
   z
     .string({
       error: (issue) =>
@@ -146,7 +146,7 @@ const tournamentFields = {
   rules: z.array(text("Rule", 500), "Rules must be a list").max(50, "Too many rules"),
 };
 
-const createTournamentSchema = z.object({
+export const createTournamentSchema = z.object({
   title: tournamentFields.title,
   game: tournamentFields.game,
   description: tournamentFields.description.optional(),
@@ -156,11 +156,11 @@ const createTournamentSchema = z.object({
 
 // Every field optional; unknown keys (the edit form's selectedDate, startTime,
 // endTime — contract M-16) are stripped.
-const updateTournamentSchema = z.object(tournamentFields).partial();
+export const updateTournamentSchema = z.object(tournamentFields).partial();
 
 // ── Contact messages ────────────────────────────────────────────────────
 const REQUIRED = "Please fill all the required fields.";
-const messageSchema = z.object({
+export const messageSchema = z.object({
   name: z.string(REQUIRED).trim().min(1, REQUIRED).max(100, "Name is too long"),
   email: z
     .email({ error: (issue) => (issue.input ? "Invalid email format" : REQUIRED) })
@@ -171,24 +171,9 @@ const messageSchema = z.object({
 });
 
 // ── Wishlist ────────────────────────────────────────────────────────────
-const wishlistSchema = z.object({
+export const wishlistSchema = z.object({
   stationId: z
     .string("Station ID is required")
     .min(1, "Station ID is required")
     .regex(/^[A-Za-z0-9-]{1,10}$/, "Invalid station id"),
 });
-
-module.exports = {
-  loginSchema,
-  registerSchema,
-  bookingSchema,
-  updateBookingSchema,
-  stationStatusSchema,
-  teamStatusSchema,
-  playerValidation,
-  teamRegistrationSchema,
-  createTournamentSchema,
-  updateTournamentSchema,
-  messageSchema,
-  wishlistSchema,
-};
