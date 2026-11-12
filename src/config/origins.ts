@@ -7,7 +7,9 @@
 // The Vite dev server is allowed only outside production (SEC-14).
 const DEV_ORIGIN = "http://localhost:5173";
 
-function parseOrigins(env = process.env) {
+type Env = Record<string, string | undefined>;
+
+export function parseOrigins(env: Env = process.env): string[] {
   const configured = (env.FRONTEND_URL || env.CLIENT_URL || "")
     .split(",")
     .map((origin) => origin.trim().replace(/\/+$/, ""))
@@ -17,4 +19,4 @@ function parseOrigins(env = process.env) {
   return [...new Set(origins)];
 }
 
-module.exports = { allowedOrigins: parseOrigins(), parseOrigins };
+export const allowedOrigins: string[] = parseOrigins();
