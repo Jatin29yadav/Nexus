@@ -1,19 +1,42 @@
-const mongoose = require("mongoose");
-const { Booking } = require("../models/Booking");
-const { Setup } = require("../models/Setup");
+// LEGACY and UNUSED: an allocator for the old Setup model. It reads a
+// `setupIds` field that today's Booking schema does not have (see CLAUDE.md).
+// Kept as it was; typed against the legacy shape it expects.
+import type { Types } from "mongoose";
+import { Booking } from "../models/Booking";
+import { Setup } from "../models/Setup";
+import type { ISetup } from "../types/domain";
+
+type SetupType = ISetup["type"];
+type LeanSetup = ISetup & { _id: Types.ObjectId };
+
+/** A booking as this allocator expects it to be stored (not the current schema). */
+interface LegacyBooking {
+  setupIds?: Array<Types.ObjectId | string>;
+  bookingTime: { start: Date; end: Date };
+}
+
+interface Interval {
+  start: Date;
+  end: Date;
+}
 
 /**
  * 🔍 Find all setups that are free for the given time window.
  * It filters active setups of the given type and excludes those already booked.
  */
-async function findAvailableSetups({
+export async function findAvailableSetups({
   bookingStart,
   bookingEnd,
   type,
   excludeSetupIds = [],
-}) {
+}: {
+  bookingStart: Date;
+  bookingEnd: Date;
+  type: SetupType;
+  excludeSetupIds?: string[];
+}): Promise<LeanSetup[]> {
   // Step 1️⃣: Find all active setups of this type (e.g., PC or VR)
-  const allSetups = await Setup.find({ type, isActive: true }).lean();
+  const allSetups = await Setup.find({ type, isActive: true }).lean<LeanSetup[]>();
 
   if (!allSetups.length) return []; // no setups of that type
 
@@ -29,19 +52,17 @@ async function findAvailableSetups({
       },
     ],
     status: { $ne: "cancelled" }, // ignore cancelled ones
-  }).lean();
+  }).lean<LegacyBooking[]>();
 
   // Step 3️⃣: Mark setups that are already booked
-  const busySetupIds = new Set();
+  const busySetupIds = new Set<string>();
   for (const b of overlappingBookings) {
     (b.setupIds || []).forEach((id) => busySetupIds.add(String(id)));
   }
 
   // Step 4️⃣: Filter out busy setups and those excluded manually
   const freeSetups = allSetups.filter(
-    (s) =>
-      !busySetupIds.has(String(s._id)) &&
-      !excludeSetupIds.includes(String(s._id))
+    (s) => !busySetupIds.has(String(s._id)) && !excludeSetupIds.includes(String(s._id)),
   );
 
   return freeSetups;
@@ -51,20 +72,26 @@ async function findAvailableSetups({
  * ⚙️ Allocate setups intelligently
  * Tries to allocate based on preference (if given), otherwise allocates first available setups.
  */
-async function allocateSetups({
+export async function allocateSetups({
   bookingStart,
   bookingEnd,
   type,
   slotsRequested,
   setupPreference = [],
-}) {
+}: {
+  bookingStart: Date;
+  bookingEnd: Date;
+  type: SetupType;
+  slotsRequested: number;
+  setupPreference?: string[];
+}): Promise<string[]> {
   // 1️⃣ Preference based allocation
   if (Array.isArray(setupPreference) && setupPreference.length) {
     const prefSetups = await Setup.find({
       _id: { $in: setupPreference },
       type,
       isActive: true,
-    }).lean();
+    }).lean<LeanSetup[]>();
     const prefIds = prefSetups.map((s) => String(s._id));
 
     const freePref = await findAvailableSetups({
@@ -103,19 +130,23 @@ async function allocateSetups({
  * 🧭 Find next available start time when all setups are booked.
  * Searches ahead (default 1 week) to suggest a possible next slot.
  */
-async function findNextAvailableStart({
+export async function findNextAvailableStart({
   requestedStart,
   durationMs,
   type,
   slotsRequested,
   searchLimitHours = 168, // 1 week
-}) {
-  const limitDate = new Date(
-    requestedStart.getTime() + searchLimitHours * 3600 * 1000
-  );
+}: {
+  requestedStart: Date;
+  durationMs: number;
+  type: SetupType;
+  slotsRequested: number;
+  searchLimitHours?: number;
+}): Promise<Date | null> {
+  const limitDate = new Date(requestedStart.getTime() + searchLimitHours * 3600 * 1000);
   let candidate = new Date(requestedStart);
 
-  const setups = await Setup.find({ type, isActive: true }).lean();
+  const setups = await Setup.find({ type, isActive: true }).lean<LeanSetup[]>();
   if (!setups.length) return null;
 
   const setupIds = setups.map((s) => String(s._id));
@@ -132,16 +163,16 @@ async function findNextAvailableStart({
       },
     ],
     status: { $ne: "cancelled" },
-  }).lean();
+  }).lean<LegacyBooking[]>();
 
   // Build busy map (setupId -> list of busy intervals)
-  const busyMap = {};
+  const busyMap: Record<string, Interval[]> = {};
   for (const s of setupIds) busyMap[s] = [];
   for (const b of bookings) {
-    for (const sid of b.setupIds) {
+    for (const sid of b.setupIds ?? []) {
       const sidStr = String(sid);
-      if (!busyMap[sidStr]) busyMap[sidStr] = [];
-      busyMap[sidStr].push({
+      const intervals = (busyMap[sidStr] ??= []);
+      intervals.push({
         start: new Date(b.bookingTime.start),
         end: new Date(b.bookingTime.end),
       });
@@ -149,20 +180,20 @@ async function findNextAvailableStart({
   }
 
   // Sort intervals by start time for faster lookup
-  for (const sid of Object.keys(busyMap)) {
-    busyMap[sid].sort((a, b) => a.start - b.start);
+  for (const intervals of Object.values(busyMap)) {
+    intervals.sort((a, b) => a.start.getTime() - b.start.getTime());
   }
 
-  const durationEnd = (start) => new Date(start.getTime() + durationMs);
+  const durationEnd = (start: Date): Date => new Date(start.getTime() + durationMs);
 
   // Try to find next free slot
   while (candidate < limitDate) {
     const endCandidate = durationEnd(candidate);
     let freeCount = 0;
-    const blockingEnds = [];
+    const blockingEnds: Date[] = [];
 
     for (const sid of setupIds) {
-      const intervals = busyMap[sid];
+      const intervals = busyMap[sid] ?? [];
       let blocked = false;
 
       for (const iv of intervals) {
@@ -184,17 +215,9 @@ async function findNextAvailableStart({
 
     // Otherwise, jump to the earliest blocking end time + 1 minute
     if (!blockingEnds.length) break;
-    const earliestRelease = new Date(
-      Math.min(...blockingEnds.map((d) => d.getTime()))
-    );
+    const earliestRelease = new Date(Math.min(...blockingEnds.map((d) => d.getTime())));
     candidate = new Date(earliestRelease.getTime() + 60 * 1000);
   }
 
   return null; // no availability found
 }
-
-module.exports = {
-  findAvailableSetups,
-  allocateSetups,
-  findNextAvailableStart,
-};
