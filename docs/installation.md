@@ -33,13 +33,18 @@ JWT_SECRET=your_jwt_secret
 ```
 
 ### Run the Server
+The backend is TypeScript (`src/`), compiled to `dist/`.
 ```bash
-# Development mode (node --watch restarts on change)
+# Development mode (tsx restarts on change, no build needed)
 npm run dev
 
-# Production mode
+# Production mode: compile, then run the compiled server
+npm run build
 npm start
 ```
+
+On Render: build command `npm ci --include=dev && npm run build`, start command `npm start`.
+(`--include=dev` because TypeScript is a devDependency and npm skips those when `NODE_ENV=production`.)
 
 ---
 

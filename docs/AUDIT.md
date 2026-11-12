@@ -418,7 +418,7 @@ Untested flows, in the order they should be covered:
 Each step is small enough for its own branch and commit(s). Contract-affecting steps follow rule 5 (paired commits + `docs/MIGRATION_LOG.md`).
 
 **Step 0 — Owner actions before any code (no code change)**
-1. Generate a new strong `JWT_SECRET` for the new Render service; set `NODE_ENV=production`, `CLIENT_URL`, `MONGO_URI`, `PORT` is provided by Render (SEC-10, DEP-06).
+1. Generate a new strong `JWT_SECRET` for the new Render service; set `NODE_ENV=production`, `CLIENT_URL`, `MONGO_URI`, `PORT` is provided by Render (SEC-10, DEP-06). Since Phase 4 the server is compiled TypeScript: build command `npm ci --include=dev && npm run build`, start command `npm start`.
 2. ~~Decide the cookie strategy~~ — decided: Vercel `/api` proxy (DEP-04). Remaining owner action: create the Render service and share its URL so the rewrite can be added.
 3. Confirm whether the old database is still in use; if so check for the ten sample accounts (SEC-15, DEP-08).
 4. Approve the dependency additions this plan needs: test runner + in-memory MongoDB, rate limiter, `helmet`.

@@ -6,31 +6,23 @@ A visual breakdown of the Nexus 2.0 workspace.
 
 ```text
 Nexus/
-├── controllers/       # Core business logic for handling requests
-│   ├── admin.js
-│   ├── booking.js
-│   ├── message.js
-│   ├── station.js
-│   ├── tournament.js
-│   └── user.js
-├── models/            # Mongoose schemas for MongoDB mappings
-│   ├── Booking.js
-│   ├── Message.js
-│   ├── Setup.js
-│   ├── Station.js
-│   ├── Tournament.js
-│   └── User.js
-├── routes/            # Express route definitions (API endpoints)
-│   ├── admin.js
-│   ├── booking.js
-│   ├── message.js
-│   ├── station.js
-│   ├── tournament.js
-│   └── user.js
-├── utils/             # Helper functions and custom error handlers
-├── app.js             # Express application setup (middleware, routes)
-├── server.js          # Server entry point & database connection
-└── package.json       # Project dependencies & scripts
+├── src/                   # TypeScript sources (compiled to dist/ by `npm run build`)
+│   ├── server.ts          # Entry point: loads .env, validates it, connects MongoDB, listens
+│   ├── app.ts             # Express application (middleware, routes, error handler)
+│   ├── middleware.ts      # isLoggedIn, optionalAuth, isAdmin, currentUser
+│   ├── config/            # env.ts (Zod-validated config), loadEnv.ts, origins.ts, rateLimits.ts
+│   ├── controllers/       # Business logic: admin, booking, message, station, tournament, user
+│   ├── models/            # Mongoose models: Booking, Message, Setup (legacy), Station, Tournament, User
+│   ├── routes/            # Express routers (API endpoints)
+│   ├── services/          # booking.service.ts (legacy, unused)
+│   ├── types/             # domain.ts, requests.ts (z.infer), api.ts, express.d.ts (req.user)
+│   ├── utils/             # validation, auth token/cookie, CSRF guard, error handler, ...
+│   ├── validations/       # zodSchemas.ts
+│   ├── init/              # seed scripts (local development only)
+│   └── seedStations.ts    # idempotent station seed
+├── tests/                 # Vitest + Supertest (TypeScript), in-memory MongoDB
+├── tsconfig.json          # build config (tests/tsconfig.json type-checks the tests)
+└── package.json           # dependencies & scripts
 ```
 
 ## Frontend Architecture (`nexus-frontend`)

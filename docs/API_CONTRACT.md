@@ -72,8 +72,8 @@ No endpoint returns field-level validation errors, and no response includes a st
 
 ### Auth middleware
 
-- `isLoggedIn` (`Nexus/middleware.js:4-31`) — verifies the cookie JWT and loads the user into `req.user`.
-- `isAdmin` (`Nexus/middleware.js:33-42`) — requires `req.user.role === "Admin"`.
+- `isLoggedIn` (`Nexus/src/middleware.ts`) — verifies the cookie JWT and loads the user into `req.user`.
+- `isAdmin` (`Nexus/src/middleware.ts`) — requires `req.user.role === "Admin"`.
 
 In the tables below: **Public** = no middleware, **User** = `isLoggedIn`, **Admin** = `isLoggedIn` + `isAdmin`.
 
@@ -81,7 +81,7 @@ In the tables below: **Public** = no middleware, **User** = `isLoggedIn`, **Admi
 
 ## 1. Backend endpoints
 
-### 1.1 Users — `Nexus/routes/user.js`, `Nexus/controllers/user.js`
+### 1.1 Users — `Nexus/src/routes/user.ts`, `Nexus/src/controllers/user.ts`
 
 #### `POST /api/users/register` — Public
 - **Body:** `{ username, email, password, phone? }` — validated, 400 + field message otherwise (ML-006): `username` 3–30 chars of letters, numbers, space, `_ . -`; `email` a valid address; `password` 8–128 chars; `phone` 7–20 digits/`+ - ( )`/spaces
@@ -106,7 +106,7 @@ In the tables below: **Public** = no middleware, **User** = `isLoggedIn`, **Admi
 - **200:** `{ success, message, wishlist: string[] }`
 - **Errors:** 400 `"Station ID is required"`; 500
 
-### 1.2 Stations — `Nexus/routes/station.js`, `Nexus/controllers/station.js`
+### 1.2 Stations — `Nexus/src/routes/station.ts`, `Nexus/src/controllers/station.ts`
 
 #### `GET /api/stations` — Public
 - **200:** `{ success, stations: Station[] }` sorted by `stationId`
@@ -121,7 +121,7 @@ Station = {                         // public shape (ML-013)
 `assignedUser`, `activeBooking`, `createdAt`, `updatedAt` are no longer returned here (SEC-22). The admin-only `PUT /admin/station/:stationId` still returns the full document.
 - **Errors:** 500 `"Error loading seat map data"`
 
-### 1.3 Bookings — `Nexus/routes/booking.js`, `Nexus/controllers/booking.js` (all **User**)
+### 1.3 Bookings — `Nexus/src/routes/booking.ts`, `Nexus/src/controllers/booking.ts` (all **User**)
 
 ```
 Booking = {
@@ -161,7 +161,7 @@ Booking = {
 - **200:** `{ success, message: "Deployment Aborted." }`; the booking is **hard-deleted** and its stations set to `Available`
 - **Errors:** 404 `"Not found."`; 403 `"Unauthorized."`; 500 `"Delete failed."`
 
-### 1.4 Tournaments — `Nexus/routes/tournament.js`, `Nexus/controllers/tournament.js`
+### 1.4 Tournaments — `Nexus/src/routes/tournament.ts`, `Nexus/src/controllers/tournament.ts`
 
 ```
 Tournament = {
@@ -213,7 +213,7 @@ Player     = { _id, name, inGameId, phone }    // 5 or 6 per team
 - **200 (otherwise):** `{ success, message: "Squad <status> successfully!", team: Team, action: "updated" }`
 - **Errors:** 401/403; 404 `"Tournament not found"` / `"Squad not found in this tournament."`; 500 `"Failed to process squad."`
 
-### 1.5 Messages — `Nexus/routes/message.js`, `Nexus/controllers/message.js`
+### 1.5 Messages — `Nexus/src/routes/message.ts`, `Nexus/src/controllers/message.ts`
 
 ```
 Message = { _id, name, email, phone?, subject: string (default "No Subject"), message, status: "Unread" | "Read", createdAt }
@@ -236,7 +236,7 @@ Message = { _id, name, email, phone?, subject: string (default "No Subject"), me
 - **200:** `{ success, message: "Transmission deleted" }`
 - **Errors:** 401/403; 404 `"Transmission not found"`; 500 `"Error deleting transmission"`
 
-### 1.6 Admin — `Nexus/routes/admin.js`, `Nexus/controllers/admin.js` (all **Admin**)
+### 1.6 Admin — `Nexus/src/routes/admin.ts`, `Nexus/src/controllers/admin.ts` (all **Admin**)
 
 #### `GET /api/admin/dashboard`
 - **200:** `{ success, data: { totalStations: number, stationsData: Station[], activeBookingsCount: number, activeBookingsData: Booking[] (user populated: username, email), totalGamers: number } }`
@@ -252,7 +252,7 @@ Message = { _id, name, email, phone?, subject: string (default "No Subject"), me
 - **Errors:** 401/403; 404 `"Booking not found"`; 400 `"Booking is already Cancelled|Completed"`; 500 `"Error cancelling booking"`
 
 ### 1.7 Fallback
-- Any other path: 404 `{ success: false, message: "API Endpoint Not Found!" }` (`Nexus/app.js:33-35`)
+- Any other path: 404 `{ success: false, message: "API Endpoint Not Found!" }` (`Nexus/src/app.ts`)
 
 ---
 

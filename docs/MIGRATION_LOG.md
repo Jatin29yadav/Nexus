@@ -19,3 +19,18 @@ Every change to the API contract (`docs/API_CONTRACT.md`) gets one entry here. B
 | ML-013 | 2026-11-11 | SEC-22 | `GET /stations` | Each station is trimmed to `{ _id, stationId, type, status }`; `assignedUser`, `activeBooking` (id and times), timestamps and `__v` are removed from this public response. | `fix/security` — `fix(SEC-22)` | `fix/security` — test mocks follow the new shape. No source change: StationGrid reads only `_id`, `stationId`, `type`, `status`. |
 | ML-014 | 2026-11-11 | baseline hardening | new `GET /health`, `GET /api/health`; `POST /messages`, `POST /users/wishlist`; all routes | New health endpoints. Bodies over 50 kB → 413; malformed JSON → 400 `"Malformed JSON body."` (was the raw parser message); contact messages and wishlist `stationId` are validated (400). Unhandled errors always answer `"Internal Server Error"`. Success shapes unchanged. | `fix/security` — `feat(hardening)` | No change: the frontend calls neither health endpoint and never sends such bodies. |
 | ML-015 | 2026-11-11 | SEC-09 | `POST /users/logout`; every authenticated route | **Schema change (approved 2026-11-11):** `User.tokenVersion` (Number, default 0, never selected by default). Tokens carry it as `tv`; logout increments it, revoking all of that user's earlier tokens (all devices). Tokens without `tv` (issued before this change) count as version 0, so nobody is signed out by the deploy itself. Response bodies unchanged; `tokenVersion` is never returned. No data migration needed. | `fix/security` — `fix(SEC-09)` | No change: logout is called the same way; a revoked session gets the same 401 an expired one does. |
+
+## Phase 4 — backend in TypeScript (2026-11-12, branch `refactor/ts-backend`)
+
+Not a contract change: no endpoint, status code, message or response shape changed, so there is no ML entry and no paired frontend commit. The 310 contract and security tests passed unchanged after every step.
+
+- **Layout:** sources moved to `src/` (`rootDir`), compiled to `dist/` (CommonJS). `npm run dev` = `tsx watch src/server.ts`; `npm run build` = `tsc`; `npm start` = `node dist/server.js`; `npm run typecheck` checks `src/` and `tests/`.
+- **Deploy impact:** `npm start` now needs a build. Render: build command `npm ci --include=dev && npm run build` (TypeScript is a devDependency, and npm skips those when `NODE_ENV=production`), start command `npm start`.
+- **Compiler:** TypeScript 7 removed `moduleResolution: node10`, so `module: CommonJS` is paired with `moduleResolution: Bundler`. `strict`, `noUncheckedIndexedAccess`; `allowJs` was removed at the end.
+- **Types:** domain interfaces in `src/types/domain.ts`; request bodies from the Zod schemas via `z.infer` in `src/types/requests.ts`; the response envelope in `src/types/api.ts`; `req.user` in `src/types/express.d.ts`. `config/env.ts` validates the environment with Zod and returns a typed `Config`.
+- **Kept on purpose:** modules that read `process.env` at call time (cookie options, JWT secret, origins at load) still do; tests change those variables at runtime.
+- **Visible differences, dev scripts only:** the seed scripts name themselves `init/index.ts` / `seedStations.ts` in their error messages.
+
+### `TODO(ts)` items
+
+None. There is no `any` in `src/` or `tests/`. The only type assertions are on two test doubles (the error-handler request/response stubs in `tests/security/hardening.test.ts` and the delayed `findOneAndUpdate` spy in `tests/security/vulnerabilities.test.ts`), and non-null assertions on database lookups that a test expects to find.

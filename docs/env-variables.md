@@ -13,7 +13,7 @@ Nexus 2.0 requires several environment variables to be set for full functionalit
 | `PORT` | Port the server listens on. | `3005` | No (defaults to 3005) |
 | `COOKIE_SAMESITE` | Auth cookie SameSite: `lax`, `strict` or `none`. | `lax` | No (`none` in production, `lax` otherwise) |
 | `TRUST_PROXY` | Number of reverse-proxy hops in front of the app. | `1` | No (1 in production, 0 otherwise) |
-| `SEED_USER_PASSWORD` | Password for the sample users created by `init/index.js` (seed scripts only). | – | No (random per run) |
+| `SEED_USER_PASSWORD` | Password for the sample users created by `src/init/index.ts` (seed scripts only). | – | No (random per run) |
 | `ALLOW_PRODUCTION_SEED` | Must be `yes` for a seed script to run with `NODE_ENV=production`. | – | No |
 
 The authoritative list is [`.env.example`](../.env.example) (names only); a test keeps it in sync with the code.
