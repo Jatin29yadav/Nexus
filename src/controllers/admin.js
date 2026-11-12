@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
-const Station = require("../models/Station");
-const Booking = require("../models/Booking");
-const User = require("../models/User");
+const { Station } = require("../models/Station");
+const { Booking } = require("../models/Booking");
+const { User } = require("../models/User");
 
 module.exports.getDashboardData = async (req, res) => {
   try {

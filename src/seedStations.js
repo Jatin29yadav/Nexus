@@ -3,7 +3,7 @@
 // are left untouched (SEC-15). Run from the Nexus/ folder: node seedStations.js
 require("dotenv").config({ quiet: true });
 const mongoose = require("mongoose");
-const Station = require("./models/Station");
+const { Station } = require("./models/Station");
 const { assertSafeToSeed } = require("./init/guard");
 
 const pad = (n) => String(n).padStart(2, "0");

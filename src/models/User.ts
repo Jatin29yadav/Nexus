@@ -1,7 +1,15 @@
-const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
+import { model, Schema, type HydratedDocument, type Model, type Types } from "mongoose";
+import bcrypt from "bcryptjs";
+import type { IUser, IUserMethods } from "../types/domain";
 
-const userSchema = mongoose.Schema(
+// Hydrated users hold mongoose arrays (.pull(), .push() with change tracking).
+type UserOverrides = {
+  wishlist: Types.Array<string>;
+  bookings: Types.Array<Types.ObjectId>;
+};
+type UserModel = Model<IUser, object, IUserMethods & UserOverrides>;
+
+const userSchema = new Schema<IUser, UserModel, IUserMethods>(
   {
     email: {
       type: String,
@@ -50,7 +58,7 @@ const userSchema = mongoose.Schema(
     // 3. User ki past/active bookings ki list (Profile dashboard ke liye)
     bookings: [
       {
-        type: mongoose.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: "Booking",
       },
     ],
@@ -68,9 +76,9 @@ userSchema.pre("save", async function () {
   this.password = hash;
 });
 
-userSchema.methods.comparePassword = async function (password) {
+userSchema.methods.comparePassword = async function (password: string): Promise<boolean> {
   return await bcrypt.compare(password, this.password);
 };
 
-const User = mongoose.model("User", userSchema);
-module.exports = User;
+export const User = model<IUser, UserModel>("User", userSchema);
+export type UserDocument = HydratedDocument<IUser, IUserMethods & UserOverrides>;

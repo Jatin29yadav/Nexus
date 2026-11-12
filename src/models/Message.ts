@@ -1,7 +1,7 @@
-const mongoose = require("mongoose");
-const Schema = mongoose.Schema;
+import { model, Schema, type HydratedDocument } from "mongoose";
+import type { IMessage } from "../types/domain";
 
-const messageSchema = new Schema({
+const messageSchema = new Schema<IMessage>({
   name: { type: String, required: true },
   email: { type: String, required: true },
   phone: { type: String }, // Optional field for contact sync
@@ -18,6 +18,5 @@ const messageSchema = new Schema({
   },
 });
 
-const Message = mongoose.model("Message", messageSchema);
-
-module.exports = Message;
+export const Message = model<IMessage>("Message", messageSchema);
+export type MessageDocument = HydratedDocument<IMessage>;

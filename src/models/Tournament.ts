@@ -1,15 +1,20 @@
-const mongoose = require("mongoose");
+import { model, Schema, type HydratedDocument, type Model, type Types } from "mongoose";
+import type { IPlayer, ITeam, ITournament } from "../types/domain";
 
-const playerSchema = new mongoose.Schema({
+const playerSchema = new Schema<IPlayer>({
   name: { type: String, required: true },
   inGameId: { type: String, required: true },
   phone: { type: String, required: true },
 });
 
-const teamSchema = new mongoose.Schema({
+function arrayLimit(val: IPlayer[]): boolean {
+  return val.length >= 5 && val.length <= 6;
+}
+
+const teamSchema = new Schema<ITeam>({
   teamName: { type: String, required: true },
   captain: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: Schema.Types.ObjectId,
     ref: "User",
     required: true,
   },
@@ -22,14 +27,14 @@ const teamSchema = new mongoose.Schema({
     enum: ["Pending", "Approved", "Rejected"],
     default: "Pending",
   },
-  assignedPCs: [{ type: mongoose.Schema.Types.ObjectId, ref: "Station" }],
+  assignedPCs: [{ type: Schema.Types.ObjectId, ref: "Station" }],
 });
 
-function arrayLimit(val) {
-  return val.length >= 5 && val.length <= 6;
-}
+// Hydrated tournaments hold their teams in a DocumentArray (.id(), .pull()).
+type TournamentOverrides = { registeredTeams: Types.DocumentArray<ITeam> };
+type TournamentModel = Model<ITournament, object, TournamentOverrides>;
 
-const tournamentSchema = new mongoose.Schema(
+const tournamentSchema = new Schema<ITournament, TournamentModel>(
   {
     title: { type: String, required: true },
     game: { type: String, required: true },
@@ -42,9 +47,7 @@ const tournamentSchema = new mongoose.Schema(
       type: String,
       default: "https://images.unsplash.com/photo-1542751371-adc38448a05e",
     },
-    rules: [
-      { type: String, default: ["Adhere to Nexus Pro-Circuit Guidelines."] },
-    ],
+    rules: [{ type: String, default: ["Adhere to Nexus Pro-Circuit Guidelines."] }],
 
     eventTime: {
       start: { type: Date, required: true },
@@ -61,4 +64,5 @@ const tournamentSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-module.exports = mongoose.model("Tournament", tournamentSchema);
+export const Tournament = model<ITournament, TournamentModel>("Tournament", tournamentSchema);
+export type TournamentDocument = HydratedDocument<ITournament, TournamentOverrides>;

@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
-const Booking = require("../models/Booking");
-const Station = require("../models/Station");
-const Tournament = require("../models/Tournament");
+const { Booking } = require("../models/Booking");
+const { Station } = require("../models/Station");
+const { Tournament } = require("../models/Tournament");
 
 const PRICE_PER_PLAYER_HOUR = 100;
 

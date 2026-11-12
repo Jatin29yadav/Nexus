@@ -1,14 +1,14 @@
-const mongoose = require("mongoose");
-const Schema = mongoose.Schema;
+import { model, Schema } from "mongoose";
+import type { ISetup } from "../types/domain";
 
-const setupSchema = new Schema(
+const setupSchema = new Schema<ISetup>(
   {
     name: { type: String, required: true },
     type: { type: String, enum: ["PC", "VR"], required: true },
     isActive: { type: Boolean, default: true },
     meta: { type: Schema.Types.Mixed, default: {} },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-module.exports = mongoose.model("Setup", setupSchema);
+export const Setup = model<ISetup>("Setup", setupSchema);

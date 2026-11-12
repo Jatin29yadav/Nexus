@@ -1,9 +1,10 @@
-const mongoose = require("mongoose");
+import { model, Schema, type HydratedDocument } from "mongoose";
+import type { IBooking } from "../types/domain";
 
-const bookingSchema = new mongoose.Schema(
+const bookingSchema = new Schema<IBooking>(
   {
     user: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
@@ -41,4 +42,5 @@ const bookingSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-module.exports = mongoose.model("Booking", bookingSchema);
+export const Booking = model<IBooking>("Booking", bookingSchema);
+export type BookingDocument = HydratedDocument<IBooking>;

@@ -1,6 +1,7 @@
-const mongoose = require("mongoose");
+import { model, Schema, type HydratedDocument } from "mongoose";
+import type { IStation } from "../types/domain";
 
-const stationSchema = new mongoose.Schema(
+const stationSchema = new Schema<IStation>(
   {
     stationId: {
       type: String,
@@ -19,13 +20,13 @@ const stationSchema = new mongoose.Schema(
     },
     // Agar koi khel raha hai, toh kis user ko assigned hai
     assignedUser: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "User",
       default: null,
     },
     // Konsi booking filhal is PC par chal rahi hai
     activeBooking: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Booking",
       default: null,
     },
@@ -33,4 +34,5 @@ const stationSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-module.exports = mongoose.model("Station", stationSchema);
+export const Station = model<IStation>("Station", stationSchema);
+export type StationDocument = HydratedDocument<IStation>;

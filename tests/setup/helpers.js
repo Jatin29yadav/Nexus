@@ -5,11 +5,11 @@ const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 
 const app = require("../../src/app");
-const User = require("../../src/models/User");
-const Booking = require("../../src/models/Booking");
-const Station = require("../../src/models/Station");
-const Tournament = require("../../src/models/Tournament");
-const Message = require("../../src/models/Message");
+const { User } = require("../../src/models/User");
+const { Booking } = require("../../src/models/Booking");
+const { Station } = require("../../src/models/Station");
+const { Tournament } = require("../../src/models/Tournament");
+const { Message } = require("../../src/models/Message");
 
 const PASSWORD = "Password123!";
 let counter = 0;

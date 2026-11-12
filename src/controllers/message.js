@@ -1,4 +1,4 @@
-const Message = require("../models/Message.js");
+const { Message } = require("../models/Message");
 
 module.exports.contactMessage = async (req, res) => {
   try {

@@ -6,7 +6,7 @@ const crypto = require("crypto");
 require("dotenv").config({ path: path.resolve(__dirname, "../../.env"), quiet: true });
 const mongoose = require("mongoose");
 const { data } = require("./data.js");
-const User = require("../models/User.js");
+const { User } = require("../models/User");
 const { assertSafeToSeed } = require("./guard.js");
 
 const initDB = async () => {

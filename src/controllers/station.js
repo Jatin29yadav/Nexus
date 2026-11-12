@@ -1,4 +1,4 @@
-const Station = require("../models/Station");
+const { Station } = require("../models/Station");
 
 module.exports.getAllStations = async (req, res) => {
   try {

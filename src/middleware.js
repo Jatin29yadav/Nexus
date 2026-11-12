@@ -1,5 +1,5 @@
 const { verifyAuthToken } = require("./utils/authToken");
-const User = require("./models/User");
+const { User } = require("./models/User");
 
 // Resolves a token to its user, or null when the user no longer exists.
 // Throws when the token is invalid, expired, or revoked: a token is only good

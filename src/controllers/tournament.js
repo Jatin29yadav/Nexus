@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const Tournament = require("../models/Tournament");
+const { Tournament } = require("../models/Tournament");
 
 // SEC-02: rosters (player names, in-game ids, phone numbers) and captain ids
 // are served to admins only. Everyone else gets what the public pages read.

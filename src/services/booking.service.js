@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
-const Booking = require("../models/Booking");
-const Setup = require("../models/Setup");
+const { Booking } = require("../models/Booking");
+const { Setup } = require("../models/Setup");
 
 /**
  * 🔍 Find all setups that are free for the given time window.

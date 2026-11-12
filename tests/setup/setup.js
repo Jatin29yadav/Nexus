@@ -32,7 +32,7 @@ beforeAll(async () => {
   await mongoose.connect(memoryUri, { dbName: `nexus_test_${process.pid}` });
   // Load every model and build its indexes (unique email, username, stationId).
   for (const name of ["User", "Booking", "Station", "Tournament", "Message"]) {
-    await require(`../../src/models/${name}`).init();
+    await require(`../../src/models/${name}`)[name].init();
   }
 });
 

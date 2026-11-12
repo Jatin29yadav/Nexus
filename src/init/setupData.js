@@ -1,6 +1,6 @@
 // init/setupData.js
 const mongoose = require("mongoose");
-const Setup = require("../models/Setup");
+const { Setup } = require("../models/Setup");
 
 // Legacy script (the Setup model is unused). Guarded like the other seeds.
 if (process.env.NODE_ENV === "production") {
