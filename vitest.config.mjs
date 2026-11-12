@@ -4,7 +4,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    include: ["tests/**/*.test.js"],
+    include: ["tests/**/*.test.{js,ts}"],
     globalSetup: ["./tests/setup/global-setup.mjs"],
     setupFiles: ["./tests/setup/setup.js"],
     // One in-memory MongoDB is shared; files run one at a time so they cannot
@@ -16,19 +16,10 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text-summary", "text", "html", "json-summary"],
       reportsDirectory: "./coverage",
-      include: [
-        "app.js",
-        "middleware.js",
-        "controllers/**/*.js",
-        "routes/**/*.js",
-        "models/**/*.js",
-        "services/**/*.js",
-        "utils/**/*.js",
-        "validations/**/*.js",
-      ],
-      // server.js and the seed scripts connect to MONGO_URI from .env and must
+      include: ["src/**/*.{js,ts}"],
+      // server and the seed scripts connect to MONGO_URI from .env and must
       // never be loaded by tests.
-      exclude: ["server.js", "seedStations.js", "init/**"],
+      exclude: ["src/server.*", "src/seedStations.*", "src/init/**", "src/types/**"],
     },
   },
 });

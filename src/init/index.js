@@ -3,7 +3,7 @@
 // Run from the Nexus/ folder: node init/index.js
 const path = require("path");
 const crypto = require("crypto");
-require("dotenv").config({ path: path.resolve(__dirname, "../.env"), quiet: true });
+require("dotenv").config({ path: path.resolve(__dirname, "../../.env"), quiet: true });
 const mongoose = require("mongoose");
 const { data } = require("./data.js");
 const User = require("../models/User.js");

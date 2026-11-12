@@ -2,15 +2,17 @@
   "name": "nexus",
   "version": "1.0.0",
   "description": "",
-  "main": "server.js",
+  "main": "dist/server.js",
   "scripts": {
+    "dev": "tsx watch src/server.js",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit && tsc -p tests",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",
-    "test:sec": "SEC_STRICT=1 vitest run tests/security",
-    "dev": "node --watch server.js",
-    "start": "node server.js"
+    "test:sec": "SEC_STRICT=1 vitest run tests/security"
   },
   "keywords": [],
   "author": "",
@@ -29,10 +31,18 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@types/cookie-parser": "^1.4.10",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^22.20.5",
+    "@types/supertest": "^7.2.1",
     "@vitest/coverage-v8": "^5.1.0",
     "@vitest/ui": "^5.1.0",
     "mongodb-memory-server": "^11.3.0",
     "supertest": "^7.3.2",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
     "vitest": "^5.1.0"
   },
   "engines": {

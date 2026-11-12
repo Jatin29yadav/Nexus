@@ -1,13 +1,15 @@
+const fs = require("fs");
+const path = require("path");
 const request = require("supertest");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 
-const app = require("../../app");
-const User = require("../../models/User");
-const Booking = require("../../models/Booking");
-const Station = require("../../models/Station");
-const Tournament = require("../../models/Tournament");
-const Message = require("../../models/Message");
+const app = require("../../src/app");
+const User = require("../../src/models/User");
+const Booking = require("../../src/models/Booking");
+const Station = require("../../src/models/Station");
+const Tournament = require("../../src/models/Tournament");
+const Message = require("../../src/models/Message");
 
 const PASSWORD = "Password123!";
 let counter = 0;
@@ -95,6 +97,24 @@ const makeMessage = (overrides = {}) =>
     ...overrides,
   });
 
+// Source files for the static checks. `name` has no extension: the .ts file is
+// preferred, the .js one is accepted while the TypeScript migration is running.
+const SRC = path.resolve(__dirname, "../../src");
+const readSource = (name) => {
+  for (const ext of [".ts", ".js"]) {
+    const file = path.join(SRC, name + ext);
+    if (fs.existsSync(file)) return fs.readFileSync(file, "utf8");
+  }
+  throw new Error(`No source file for ${name}`);
+};
+// Every file under src/, as [relative path, text].
+const allSources = (dir = SRC) =>
+  fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) return allSources(full);
+    return [[path.relative(SRC, full), fs.readFileSync(full, "utf8")]];
+  });
+
 const newId = () => new mongoose.Types.ObjectId().toString();
 
 // `vuln` marks a test that asserts the SECURE behaviour for an open AUDIT.md
@@ -117,6 +137,8 @@ module.exports = {
   makeTournament,
   makeMessage,
   newId,
+  readSource,
+  allSources,
   vuln,
   PASSWORD,
   WINDOW,

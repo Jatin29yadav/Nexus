@@ -1,4 +1,10 @@
 // Runs in every test file before the app is loaded.
+// TEMPORARY (TypeScript migration): the JS tests load src/ through Node's own
+// require(), which cannot read .ts files. tsx's hook teaches it to.
+if (!globalThis.__nexusTsxRegistered) {
+  require("tsx/cjs/api").register();
+  globalThis.__nexusTsxRegistered = true;
+}
 const path = require("path");
 const mongoose = require("mongoose");
 
@@ -26,7 +32,7 @@ beforeAll(async () => {
   await mongoose.connect(memoryUri, { dbName: `nexus_test_${process.pid}` });
   // Load every model and build its indexes (unique email, username, stationId).
   for (const name of ["User", "Booking", "Station", "Tournament", "Message"]) {
-    await require(`../../models/${name}`).init();
+    await require(`../../src/models/${name}`).init();
   }
 });
 
@@ -34,7 +40,7 @@ beforeEach(async () => {
   const { collections } = mongoose.connection;
   await Promise.all(Object.values(collections).map((c) => c.deleteMany({})));
   // Rate-limit counters are per process; every test starts from zero.
-  await require("../../config/rateLimits").resetAll();
+  await require("../../src/config/rateLimits").resetAll();
 });
 
 afterAll(async () => {

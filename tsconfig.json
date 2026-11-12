@@ -1,0 +1,24 @@
+{
+  // Build config: compiles src/ to dist/ (CommonJS, matching "type": "commonjs").
+  // Tests are type-checked separately by tests/tsconfig.json.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "CommonJS",
+    // TypeScript 7 removed moduleResolution "node10"; "Bundler" is the
+    // resolution it accepts together with module "CommonJS".
+    "moduleResolution": "Bundler",
+    "rootDir": "src",
+    "outDir": "dist",
+    "types": ["node"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "sourceMap": true,
+    "allowJs": true // temporary, while src/ is being converted
+  },
+  "include": ["src"]
+}

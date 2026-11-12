@@ -38,7 +38,7 @@ describe("CORS", () => {
   });
 
   describe("SEC-14: origin list parsing (config/origins.js)", () => {
-    const { parseOrigins } = require("../../config/origins");
+    const { parseOrigins } = require("../../src/config/origins");
 
     it("accepts a comma-separated FRONTEND_URL and tidies each entry", () => {
       expect(

@@ -1,12 +1,10 @@
 // Baseline hardening that is not tied to a single AUDIT.md finding:
 // health endpoint, body limits, the central error handler, and validation on
 // the last two routes that took unvalidated input.
-const fs = require("fs");
-const path = require("path");
 const mongoose = require("mongoose");
-const { api, makeUser, makeAdmin, makeBooking, makeMessage, models } = require("../setup/helpers");
-const errorHandler = require("../../utils/errorHandler");
-const ExpressError = require("../../utils/expressError");
+const { api, makeUser, makeAdmin, makeBooking, makeMessage, models, allSources } = require("../setup/helpers");
+const errorHandler = require("../../src/utils/errorHandler");
+const ExpressError = require("../../src/utils/expressError");
 
 describe("GET /health and /api/health", () => {
   it.each(["/health", "/api/health"])("%s answers 200 without auth while the database is up", async (url) => {
@@ -204,14 +202,7 @@ describe("ownership on every per-resource route", () => {
 });
 
 describe("no hard-coded hosts or secrets in the source", () => {
-  const ROOT = path.resolve(__dirname, "../..");
-  const sources = () => {
-    const files = ["app.js", "server.js", "middleware.js", "seedStations.js"];
-    for (const dir of ["config", "utils", "controllers", "routes", "init", "validations"]) {
-      for (const f of fs.readdirSync(path.join(ROOT, dir))) files.push(path.join(dir, f));
-    }
-    return files.map((f) => [f, fs.readFileSync(path.join(ROOT, f), "utf8")]);
-  };
+  const sources = allSources;
 
   it("no reference to the old Render service or a mongodb+srv URL", () => {
     for (const [file, text] of sources()) {

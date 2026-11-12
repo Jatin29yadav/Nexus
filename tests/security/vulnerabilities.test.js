@@ -21,6 +21,8 @@ const {
   vuln,
   models,
   PASSWORD,
+  readSource,
+  allSources,
 } = require("../setup/helpers");
 
 const ROOT = path.resolve(__dirname, "../..");
@@ -555,7 +557,7 @@ describe("SEC-10 a missing or weak JWT_SECRET is detected and never leaks librar
   });
 
   describe("boot-time check (config/env.js)", () => {
-    const { envProblems, validateEnv } = require("../../config/env");
+    const { envProblems, validateEnv } = require("../../src/config/env");
     const good = {
       MONGO_URI: "mongodb://127.0.0.1/x",
       JWT_SECRET: "s".repeat(32),
@@ -585,7 +587,7 @@ describe("SEC-10 a missing or weak JWT_SECRET is detected and never leaks librar
     });
 
     it("server.js runs the check before anything else", () => {
-      const server = fs.readFileSync(path.join(ROOT, "server.js"), "utf8");
+      const server = readSource("server");
       expect(server.indexOf("validateEnv()")).toBeGreaterThan(-1);
       expect(server.indexOf("validateEnv()")).toBeLessThan(server.indexOf("mongoose.connect"));
     });
@@ -715,11 +717,11 @@ describe("SEC-13 auth cookie flags", () => {
 });
 
 describe("SEC-15 seed scripts cannot wipe a production database", () => {
-  const source = (file) => fs.readFileSync(path.join(ROOT, file), "utf8");
+  const source = readSource;
 
   // Static check on purpose: these scripts connect to MONGO_URI from .env and
   // delete data, so tests must never execute them.
-  it.each(["init/index.js", "seedStations.js"])(
+  it.each(["init/index", "seedStations"])(
     "%s refuses to run when NODE_ENV is production",
     (file) => {
       expect(source(file)).toMatch(/NODE_ENV/);
@@ -727,11 +729,11 @@ describe("SEC-15 seed scripts cannot wipe a production database", () => {
   );
 
   it("the sample users file contains no literal passwords", () => {
-    expect(source("init/data.js")).not.toMatch(/password:\s*["'`]/);
+    expect(source("init/data")).not.toMatch(/password:\s*["'`]/);
   });
 
   describe("the shared guard (init/guard.js)", () => {
-    const { assertSafeToSeed } = require("../../init/guard");
+    const { assertSafeToSeed } = require("../../src/init/guard");
     const uri = "mongodb://127.0.0.1/x";
 
     it("allows development", () => {
@@ -755,14 +757,14 @@ describe("SEC-15 seed scripts cannot wipe a production database", () => {
     });
   });
 
-  it.each(["init/index.js", "seedStations.js"])("%s calls the guard before connecting", (file) => {
+  it.each(["init/index", "seedStations"])("%s calls the guard before connecting", (file) => {
     const text = source(file);
     expect(text.indexOf("assertSafeToSeed(")).toBeGreaterThan(-1);
     expect(text.indexOf("assertSafeToSeed(")).toBeLessThan(text.indexOf("mongoose.connect("));
   });
 
   it("the station seed no longer deletes anything", () => {
-    expect(source("seedStations.js")).not.toMatch(/deleteMany|drop\(/);
+    expect(source("seedStations")).not.toMatch(/deleteMany|drop\(/);
   });
 });
 
@@ -801,13 +803,8 @@ describe("SEC-16 env files are git-ignored", () => {
     for (const line of assignments) expect(line).toMatch(/^[A-Z_]+=$/); // name only
 
     // Every process.env.X read anywhere in the app must be documented.
-    const files = ["app.js", "server.js", "middleware.js", "seedStations.js"];
-    for (const dir of ["config", "utils", "controllers", "routes", "models", "init"]) {
-      for (const f of fs.readdirSync(path.join(ROOT, dir))) files.push(path.join(dir, f));
-    }
     const used = new Set();
-    for (const file of files) {
-      const text = fs.readFileSync(path.join(ROOT, file), "utf8");
+    for (const [, text] of allSources()) {
       for (const [, name] of text.matchAll(/\benv\.([A-Z][A-Z0-9_]*)/g)) used.add(name);
     }
     used.delete("CLIENT_URL"); // deprecated alias of FRONTEND_URL, documented in a comment
