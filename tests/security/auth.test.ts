@@ -1,12 +1,21 @@
 // JWT handling and "is the check present on every protected route".
 // These lock behaviour that is CORRECT today.
-const jwt = require("jsonwebtoken");
-const { api, makeUser, makeAdmin, signToken, newId, models } = require("../setup/helpers");
+import jwt from "jsonwebtoken";
+import {
+  api,
+  makeUser,
+  makeAdmin,
+  signToken,
+  newId,
+  models,
+  cookiePair,
+  type Method,
+} from "../setup/helpers";
 
 const id = newId();
 
 // Every route behind isLoggedIn (docs/API_CONTRACT.md §1).
-const USER_ROUTES = [
+const USER_ROUTES: Array<[Method, string]> = [
   ["get", "/api/users/profile"],
   ["post", "/api/users/wishlist"],
   ["post", "/api/bookings"],
@@ -18,7 +27,7 @@ const USER_ROUTES = [
 ];
 
 // Every route behind isLoggedIn + isAdmin.
-const ADMIN_ROUTES = [
+const ADMIN_ROUTES: Array<[Method, string]> = [
   ["post", "/api/tournaments"],
   ["put", `/api/tournaments/${id}`],
   ["delete", `/api/tournaments/${id}`],
@@ -52,7 +61,7 @@ describe("every admin route rejects a normal user", () => {
 });
 
 describe("token verification", () => {
-  const profile = (token) =>
+  const profile = (token: string) =>
     api().get("/api/users/profile").set("Cookie", `token=${token}`);
   const rejected = { success: false, message: "Invalid or expired token." };
 
@@ -91,7 +100,7 @@ describe("token verification", () => {
 
   it("rejects an unsigned (alg: none) token", async () => {
     const { user } = await makeAdmin();
-    const b64 = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");
+    const b64 = (o: object) => Buffer.from(JSON.stringify(o)).toString("base64url");
     const unsigned = `${b64({ alg: "none", typ: "JWT" })}.${b64({ userId: user._id })}.`;
 
     const res = await profile(unsigned);
@@ -101,7 +110,7 @@ describe("token verification", () => {
 
   it("SEC-09: rejects a correctly signed token that uses another algorithm", async () => {
     const { user } = await makeUser();
-    const hs512 = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+    const hs512 = jwt.sign({ userId: user._id }, process.env.JWT_SECRET!, {
       algorithm: "HS512",
       expiresIn: "7d",
     });
@@ -113,11 +122,13 @@ describe("token verification", () => {
   it("SEC-09: issued tokens are HS256 and expire after exactly 7 days", async () => {
     const { user, password } = await makeUser();
     const login = await api().post("/api/users/login").send({ email: user.email, password });
-    const token = login.headers["set-cookie"][0].split(";")[0].replace("token=", "");
-    const { header, payload } = jwt.decode(token, { complete: true });
+    const token = cookiePair(login).replace("token=", "");
+    const decoded = jwt.decode(token, { complete: true });
+    if (!decoded || typeof decoded.payload === "string") throw new Error("not a JWT");
+    const { header, payload } = decoded;
 
     expect(header.alg).toBe("HS256");
-    expect(payload.exp - payload.iat).toBe(7 * 24 * 60 * 60);
+    expect(Number(payload.exp) - Number(payload.iat)).toBe(7 * 24 * 60 * 60);
     expect(Object.keys(payload).sort()).toEqual(["exp", "iat", "tv", "userId"]);
     expect(payload.tv).toBe(0);
   });
@@ -146,6 +157,6 @@ describe("token verification", () => {
   it("a user cannot make themselves admin through any documented write", async () => {
     const { user, cookie } = await makeUser();
     await api().post("/api/users/wishlist").set("Cookie", cookie).send({ stationId: "PC-01", role: "Admin" });
-    expect((await models.User.findById(user._id)).role).toBe("User");
+    expect((await models.User.findById(user._id))!.role).toBe("User");
   });
 });

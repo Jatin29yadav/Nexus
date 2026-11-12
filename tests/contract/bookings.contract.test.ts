@@ -1,7 +1,7 @@
 // Contract: docs/API_CONTRACT.md §1.3 Bookings. Locks CURRENT behaviour,
 // including behaviour AUDIT.md lists as defects (those are also asserted the
 // other way round, as expected-to-fail tests, in tests/security).
-const {
+import {
   api,
   makeUser,
   makeAdmin,
@@ -12,7 +12,7 @@ const {
   newId,
   models,
   WINDOW,
-} = require("../setup/helpers");
+} from "../setup/helpers";
 
 const BOOKING_KEYS = [
   "__v",
@@ -69,11 +69,11 @@ describe("POST /api/bookings", () => {
 
     const stations = await models.Station.find().sort({ stationId: 1 }).lean();
     const byId = Object.fromEntries(stations.map((s) => [s.stationId, s]));
-    expect(byId["PC-01"].status).toBe("Occupied");
-    expect(byId["PC-01"].assignedUser.toString()).toBe(user._id.toString());
-    expect(byId["PC-01"].activeBooking.toString()).toBe(res.body.booking._id);
-    expect(byId["PC-02"].status).toBe("Occupied");
-    expect(byId["PC-03"].status).toBe("Available");
+    expect(byId["PC-01"]!.status).toBe("Occupied");
+    expect(byId["PC-01"]!.assignedUser!.toString()).toBe(user._id.toString());
+    expect(byId["PC-01"]!.activeBooking!.toString()).toBe(res.body.booking._id);
+    expect(byId["PC-02"]!.status).toBe("Occupied");
+    expect(byId["PC-03"]!.status).toBe("Available");
   });
 
   it.each(["Upcoming", "Registration Open", "Live"])(
@@ -164,7 +164,7 @@ describe("POST /api/bookings", () => {
       message: "One or more selected stations are not available.",
     });
     expect(await models.Booking.countDocuments()).toBe(0);
-    expect((await models.Station.findOne({ stationId: "PC-01" })).status).toBe("Available");
+    expect((await models.Station.findOne({ stationId: "PC-01" }))!.status).toBe("Available");
   });
 
   it("the stored price is players x hours x 100, whatever the client sends (SEC-03)", async () => {
@@ -202,7 +202,7 @@ describe("GET /api/bookings", () => {
     const res = await api().get("/api/bookings").set("Cookie", owner.cookie);
 
     expect(res.status).toBe(200);
-    expect(res.body.bookings.map((b) => b._id)).toEqual([
+    expect(res.body.bookings.map((b: { _id: string }) => b._id)).toEqual([
       second._id.toString(),
       first._id.toString(),
     ]);
@@ -349,7 +349,7 @@ describe("PUT /api/bookings/:bookingId", () => {
 
     expect(res.status).toBe(403);
     expect(res.body).toEqual({ success: false, message: "Forbidden." });
-    expect((await models.Booking.findById(booking._id)).phone).toBe("9123456780");
+    expect((await models.Booking.findById(booking._id))!.phone).toBe("9123456780");
   });
 });
 

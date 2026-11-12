@@ -4,9 +4,9 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    include: ["tests/**/*.test.{js,ts}"],
-    globalSetup: ["./tests/setup/global-setup.mjs"],
-    setupFiles: ["./tests/setup/setup.js"],
+    include: ["tests/**/*.test.ts"],
+    globalSetup: ["./tests/setup/global-setup.ts"],
+    setupFiles: ["./tests/setup/setup.ts"],
     // One in-memory MongoDB is shared; files run one at a time so they cannot
     // see each other's data.
     fileParallelism: false,

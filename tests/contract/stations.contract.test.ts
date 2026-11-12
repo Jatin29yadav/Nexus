@@ -1,5 +1,5 @@
 // Contract: docs/API_CONTRACT.md §1.2 Stations.
-const { api, makeUser, makeBooking, seedStations, models } = require("../setup/helpers");
+import { api, makeUser, makeBooking, seedStations, models } from "../setup/helpers";
 
 describe("GET /api/stations", () => {
   it("200: public, empty list when nothing is seeded", async () => {
@@ -12,7 +12,7 @@ describe("GET /api/stations", () => {
     await seedStations(["PC-02", "C-01", "PC-01"]);
     const res = await api().get("/api/stations");
 
-    expect(res.body.stations.map((s) => s.stationId)).toEqual(["C-01", "PC-01", "PC-02"]);
+    expect(res.body.stations.map((s: { stationId: string }) => s.stationId)).toEqual(["C-01", "PC-01", "PC-02"]);
     expect(Object.keys(res.body.stations[0]).sort()).toEqual(["_id", "stationId", "status", "type"]);
     expect(res.body.stations[0]).toMatchObject({
       stationId: "C-01",

@@ -1,10 +1,12 @@
 // Baseline hardening that is not tied to a single AUDIT.md finding:
 // health endpoint, body limits, the central error handler, and validation on
 // the last two routes that took unvalidated input.
-const mongoose = require("mongoose");
-const { api, makeUser, makeAdmin, makeBooking, makeMessage, models, allSources } = require("../setup/helpers");
-const { errorHandler } = require("../../src/utils/errorHandler");
-const { ExpressError } = require("../../src/utils/expressError");
+import mongoose from "mongoose";
+import type { Request, Response } from "express";
+import type { Test } from "supertest";
+import { api, makeUser, makeAdmin, makeBooking, makeMessage, models, allSources } from "../setup/helpers";
+import { errorHandler } from "../../src/utils/errorHandler";
+import { ExpressError } from "../../src/utils/expressError";
 
 describe("GET /health and /api/health", () => {
   it.each(["/health", "/api/health"])("%s answers 200 without auth while the database is up", async (url) => {
@@ -63,17 +65,19 @@ describe("request bodies", () => {
 });
 
 describe("central error handler", () => {
-  const run = (err) => {
+  const run = (err: unknown) => {
     const res = {
       headersSent: false,
       status: vi.fn().mockReturnThis(),
       json: vi.fn().mockReturnThis(),
     };
     const log = vi.spyOn(console, "error").mockImplementation(() => {});
-    errorHandler(err, { method: "GET", originalUrl: "/api/x" }, res, () => {});
+    // Test doubles: the handler only touches these members.
+    const req = { method: "GET", originalUrl: "/api/x" } as unknown as Request;
+    errorHandler(err, req, res as unknown as Response, () => {});
     const logged = log.mock.calls.length;
     log.mockRestore();
-    return { status: res.status.mock.calls[0][0], body: res.json.mock.calls[0][0], logged };
+    return { status: res.status.mock.calls[0]?.[0], body: res.json.mock.calls[0]?.[0], logged };
   };
 
   it.each(["production", "development", "test"])(
@@ -150,7 +154,7 @@ describe("validation on the remaining routes", () => {
       status: "Read",
       createdAt: "2001-01-01T00:00:00.000Z",
     });
-    const saved = await models.Message.findOne().lean();
+    const saved = (await models.Message.findOne().lean())!;
     expect(saved.status).toBe("Unread");
     expect(saved.createdAt.getFullYear()).not.toBe(2001);
   });
@@ -160,7 +164,7 @@ describe("validation on the remaining routes", () => {
     const res = await api().post("/api/users/wishlist").set("Cookie", cookie).send({ stationId });
 
     expect(res.status).toBe(400);
-    expect((await models.User.findById(user._id)).wishlist).toEqual([]);
+    expect((await models.User.findById(user._id))!.wishlist).toEqual([]);
   });
 });
 
@@ -170,13 +174,13 @@ describe("ownership on every per-resource route", () => {
     const stranger = await makeUser();
     const booking = await makeBooking(owner);
     const url = `/api/bookings/${booking._id}`;
-    const as = (req) => req.set("Cookie", stranger.cookie);
+    const as = (req: Test) => req.set("Cookie", stranger.cookie);
 
     expect((await as(api().get(url))).status).toBe(403);
     expect((await as(api().put(url)).send({ phone: "9111111111" })).status).toBe(403);
     expect((await as(api().delete(url))).status).toBe(403);
 
-    const untouched = await models.Booking.findById(booking._id);
+    const untouched = (await models.Booking.findById(booking._id))!;
     expect(untouched.phone).toBe("9123456780");
   });
 
@@ -185,8 +189,8 @@ describe("ownership on every per-resource route", () => {
     const b = await makeUser();
     await api().post("/api/users/wishlist").set("Cookie", a.cookie).send({ stationId: "PC-01" });
 
-    expect((await models.User.findById(a.user._id)).wishlist).toEqual(["PC-01"]);
-    expect((await models.User.findById(b.user._id)).wishlist).toEqual([]);
+    expect((await models.User.findById(a.user._id))!.wishlist).toEqual(["PC-01"]);
+    expect((await models.User.findById(b.user._id))!.wishlist).toEqual([]);
   });
 
   it("messages are admin-only to read, mark and delete", async () => {

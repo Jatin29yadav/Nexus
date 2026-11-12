@@ -7,9 +7,9 @@
 //
 // SEC-14 lives in cors-production.test.js (needs NODE_ENV=production at load).
 // SEC-19 and SEC-20 are frontend findings, tested in nexus-frontend.
-const fs = require("fs");
-const path = require("path");
-const {
+import fs from "node:fs";
+import path from "node:path";
+import {
   api,
   makeUser,
   makeAdmin,
@@ -23,15 +23,22 @@ const {
   PASSWORD,
   readSource,
   allSources,
-} = require("../setup/helpers");
+  firstCookie,
+  cookiePair,
+  type Method,
+} from "../setup/helpers";
+import type { Test } from "supertest";
+import { envProblems, validateEnv } from "../../src/config/env";
+import { assertSafeToSeed } from "../../src/init/guard";
 
 const ROOT = path.resolve(__dirname, "../..");
-const installed = (name) =>
+const installed = (name: string): string =>
   JSON.parse(fs.readFileSync(path.join(ROOT, "node_modules", name, "package.json"), "utf8")).version;
-const atLeast = (version, minimum) => {
+const atLeast = (version: string, minimum: string): boolean => {
   const a = version.split(".").map(Number);
   const b = minimum.split(".").map(Number);
-  for (let i = 0; i < 3; i += 1) if (a[i] !== b[i]) return a[i] > b[i];
+  // A missing part compares like undefined did in JS: never greater.
+  for (let i = 0; i < 3; i += 1) if (a[i] !== b[i]) return (a[i] ?? NaN) > (b[i] ?? NaN);
   return true;
 };
 
@@ -45,7 +52,7 @@ describe("SEC-01 booking list is scoped to the caller", () => {
     const res = await api().get("/api/bookings").set("Cookie", alice.cookie);
 
     expect(res.status).toBe(200);
-    expect(res.body.bookings.map((b) => b.name)).toEqual(["Alice"]);
+    expect(res.body.bookings.map((b: { name: string }) => b.name)).toEqual(["Alice"]);
   });
 
   it("an admin still receives every booking", async () => {
@@ -57,7 +64,7 @@ describe("SEC-01 booking list is scoped to the caller", () => {
 
     const res = await api().get("/api/bookings").set("Cookie", admin.cookie);
 
-    expect(res.body.bookings.map((b) => b.name).sort()).toEqual(["Alice", "Bob"]);
+    expect(res.body.bookings.map((b: { name: string }) => b.name).sort()).toEqual(["Alice", "Bob"]);
   });
 });
 
@@ -96,7 +103,7 @@ describe("SEC-02 rosters stay available to admins and hidden from everyone else"
     const t = await withTeam();
     const res = await api().get(`/api/tournaments/${t._id}`);
     expect(res.body.tournament.registeredTeams).toEqual([
-      { _id: t.registeredTeams[0]._id.toString(), teamName: "Owls", status: "Pending" },
+      { _id: t.registeredTeams[0]!._id.toString(), teamName: "Owls", status: "Pending" },
     ]);
   });
 
@@ -172,7 +179,7 @@ describe("SEC-03 booking creation does not trust the client", () => {
       .set("Cookie", cookie)
       .send(bookingPayload({ stations: ["PC-03"] }));
 
-    expect((await models.Station.findOne({ stationId: "PC-03" })).status).toBe("Maintenance");
+    expect((await models.Station.findOne({ stationId: "PC-03" }))!.status).toBe("Maintenance");
   });
 
   it("a station id that does not exist is rejected", async () => {
@@ -288,7 +295,7 @@ describe("SEC-05 cross-site request forgery", () => {
   it("a JSON request from a foreign origin is refused on every state-changing method", async () => {
     const owner = await makeUser();
     const booking = await makeBooking(owner);
-    const from = (req) => req.set("Cookie", owner.cookie).set("Origin", "https://attacker.example");
+    const from = (req: Test) => req.set("Cookie", owner.cookie).set("Origin", "https://attacker.example");
 
     expect((await from(api().put(`/api/bookings/${booking._id}`)).send({ phone: "9111111111" })).status).toBe(403);
     expect((await from(api().delete(`/api/bookings/${booking._id}`))).status).toBe(403);
@@ -448,11 +455,11 @@ describe("SEC-08 security headers", () => {
 });
 
 describe("SEC-09 logout invalidates the token", () => {
-  const login = async (user, password) => {
+  const login = async (user: { email: string }, password: string) => {
     const res = await api().post("/api/users/login").send({ email: user.email, password });
-    return res.headers["set-cookie"][0].split(";")[0];
+    return cookiePair(res);
   };
-  const profile = (cookie) => api().get("/api/users/profile").set("Cookie", cookie);
+  const profile = (cookie: string) => api().get("/api/users/profile").set("Cookie", cookie);
 
   it("a token captured before logout stops working after logout", async () => {
     const { user, password } = await makeUser();
@@ -530,7 +537,7 @@ describe("SEC-09 logout invalidates the token", () => {
   it("tokenVersion is never sent to the client", async () => {
     const { user, password } = await makeUser();
     const res = await api().post("/api/users/login").send({ email: user.email, password });
-    const me = await profile(res.headers["set-cookie"][0].split(";")[0]);
+    const me = await profile(cookiePair(res));
 
     expect(res.body.user).not.toHaveProperty("tokenVersion");
     expect(me.body.user).not.toHaveProperty("tokenVersion");
@@ -557,8 +564,7 @@ describe("SEC-10 a missing or weak JWT_SECRET is detected and never leaks librar
   });
 
   describe("boot-time check (config/env.js)", () => {
-    const { envProblems, validateEnv } = require("../../src/config/env");
-    const good = {
+    const good: Record<string, string | undefined> = {
       MONGO_URI: "mongodb://127.0.0.1/x",
       JWT_SECRET: "s".repeat(32),
       NODE_ENV: "production",
@@ -628,7 +634,7 @@ describe("SEC-11 password policy and input validation on register", () => {
 
   it("passwords are stored with bcrypt at cost 10 or higher", async () => {
     const { user } = await makeUser();
-    const { password } = await models.User.findById(user._id).select("+password");
+    const { password } = (await models.User.findById(user._id).select("+password"))!;
     expect(Number(password.split("$")[2])).toBeGreaterThanOrEqual(10);
   });
 });
@@ -671,7 +677,7 @@ describe("SEC-13 auth cookie flags", () => {
   const loginCookie = async () => {
     const { user, password } = await makeUser();
     const res = await api().post("/api/users/login").send({ email: user.email, password });
-    return res.headers["set-cookie"][0];
+    return firstCookie(res);
   };
 
   it("the cookie has an explicit lifetime (Max-Age or Expires)", async () => {
@@ -694,21 +700,21 @@ describe("SEC-13 auth cookie flags", () => {
   });
 
   it("register and logout use the same attributes as login", async () => {
-    const attrs = (cookie) =>
+    const attrs = (cookie: string) =>
       cookie
         .split(";")
         .slice(1)
-        .map((part) => part.trim().split("=")[0].toLowerCase())
+        .map((part) => (part.trim().split("=")[0] ?? "").toLowerCase())
         .filter((name) => !["max-age", "expires"].includes(name))
         .sort();
 
     const login = await loginCookie();
-    const register = (
+    const register = firstCookie(
       await api()
         .post("/api/users/register")
-        .send({ username: "cookie_user", email: "cookie@example.test", password: PASSWORD })
-    ).headers["set-cookie"][0];
-    const logout = (await api().post("/api/users/logout")).headers["set-cookie"][0];
+        .send({ username: "cookie_user", email: "cookie@example.test", password: PASSWORD }),
+    );
+    const logout = firstCookie(await api().post("/api/users/logout"));
 
     expect(attrs(register)).toEqual(attrs(login));
     expect(attrs(logout)).toEqual(attrs(login));
@@ -733,7 +739,6 @@ describe("SEC-15 seed scripts cannot wipe a production database", () => {
   });
 
   describe("the shared guard (init/guard.js)", () => {
-    const { assertSafeToSeed } = require("../../src/init/guard");
     const uri = "mongodb://127.0.0.1/x";
 
     it("allows development", () => {
@@ -771,7 +776,7 @@ describe("SEC-15 seed scripts cannot wipe a production database", () => {
 describe("SEC-16 env files are git-ignored", () => {
   // Reads .gitignore directly (no git process needed). Covers the plain
   // file-name patterns this repo uses; `*` matches any run of characters.
-  const ignoredByGitignore = (fileName) =>
+  const ignoredByGitignore = (fileName: string) =>
     fs
       .readFileSync(path.join(ROOT, ".gitignore"), "utf8")
       .split("\n")
@@ -803,9 +808,9 @@ describe("SEC-16 env files are git-ignored", () => {
     for (const line of assignments) expect(line).toMatch(/^[A-Z_]+=$/); // name only
 
     // Every process.env.X read anywhere in the app must be documented.
-    const used = new Set();
+    const used = new Set<string>();
     for (const [, text] of allSources()) {
-      for (const [, name] of text.matchAll(/\benv\.([A-Z][A-Z0-9_]*)/g)) used.add(name);
+      for (const [, name] of text.matchAll(/\benv\.([A-Z][A-Z0-9_]*)/g)) if (name) used.add(name);
     }
     used.delete("CLIENT_URL"); // deprecated alias of FRONTEND_URL, documented in a comment
 
@@ -830,7 +835,7 @@ describe("SEC-17 owner check and update validation", () => {
       .set("Cookie", cookie)
       .send({ status: "Hacked" });
 
-    expect((await models.Tournament.findById(t._id).lean()).status).toBe("Upcoming");
+    expect((await models.Tournament.findById(t._id).lean())!.status).toBe("Upcoming");
     expect(res.status).toBe(400);
     expect(res.body).toEqual({ success: false, message: "Invalid tournament status" });
   });
@@ -863,7 +868,7 @@ describe("SEC-17 owner check and update validation", () => {
 
     expect(res.status).toBe(400);
     expect(res.body).toEqual({ success: false, message });
-    expect((await models.Tournament.findById(t._id)).updatedAt).toEqual(t.updatedAt);
+    expect((await models.Tournament.findById(t._id))!.updatedAt).toEqual(t.updatedAt);
   });
 
   it("what the admin edit form really sends still works (string maxTeams, UI-only fields)", async () => {
@@ -902,7 +907,7 @@ describe("SEC-18 team registration respects tournament state and capacity", () =
       success: false,
       message: "Registration is closed for this tournament",
     });
-    expect((await models.Tournament.findById(t._id)).registeredTeams).toHaveLength(0);
+    expect((await models.Tournament.findById(t._id))!.registeredTeams).toHaveLength(0);
   });
 
   it("concurrent registrations cannot exceed maxTeams", async () => {
@@ -913,18 +918,21 @@ describe("SEC-18 team registration respects tournament state and capacity", () =
     // the friendly pre-check, then let them hit the database together.
     const realWrite = models.Tournament.findOneAndUpdate.bind(models.Tournament);
     let waiting = 0;
-    let release;
-    const allArrived = new Promise((resolve) => {
+    let release: () => void = () => {};
+    const allArrived = new Promise<void>((resolve) => {
       release = resolve;
     });
+    const delayedWrite = async (...args: Parameters<typeof realWrite>) => {
+      waiting += 1;
+      if (waiting >= users.length) release();
+      await Promise.race([allArrived, new Promise((r) => setTimeout(r, 1000))]);
+      return realWrite(...args);
+    };
+    // Test double: the controller only awaits the result, so a promise can
+    // stand in for the Query that findOneAndUpdate's type promises.
     const spy = vi
       .spyOn(models.Tournament, "findOneAndUpdate")
-      .mockImplementation(async (...args) => {
-        waiting += 1;
-        if (waiting >= users.length) release();
-        await Promise.race([allArrived, new Promise((r) => setTimeout(r, 1000))]);
-        return realWrite(...args);
-      });
+      .mockImplementation(delayedWrite as unknown as typeof models.Tournament.findOneAndUpdate);
 
     let responses;
     try {
@@ -941,7 +949,7 @@ describe("SEC-18 team registration respects tournament state and capacity", () =
     }
 
     expect(waiting).toBe(4); // all four really did race
-    expect((await models.Tournament.findById(t._id)).registeredTeams).toHaveLength(1);
+    expect((await models.Tournament.findById(t._id))!.registeredTeams).toHaveLength(1);
     expect(responses.map((r) => r.status).sort()).toEqual([201, 400, 400, 400]);
     expect(responses.filter((r) => r.status === 400).map((r) => r.body.message)).toEqual(
       Array(3).fill("Tournament is full"),
@@ -962,7 +970,7 @@ describe("SEC-18 team registration respects tournament state and capacity", () =
     );
 
     expect(responses.filter((r) => r.status === 201)).toHaveLength(1);
-    expect((await models.Tournament.findById(t._id)).registeredTeams).toHaveLength(1);
+    expect((await models.Tournament.findById(t._id))!.registeredTeams).toHaveLength(1);
   });
 
   it.each([
@@ -995,7 +1003,7 @@ describe("SEC-21 malformed ids and bad enum values return 400", () => {
   });
 
   it("an invalid station status is a 400", async () => {
-    const [station] = await seedStations(["PC-01"]);
+    const station = (await seedStations(["PC-01"]))[0]!;
     const { cookie } = await makeAdmin();
     const res = await api()
       .put(`/api/admin/station/${station._id}`)
@@ -1007,7 +1015,7 @@ describe("SEC-21 malformed ids and bad enum values return 400", () => {
   it("every route with an id parameter answers 400 to a malformed one", async () => {
     const { cookie } = await makeAdmin();
     const good = "65f000000000000000000001";
-    const routes = [
+    const routes: Array<[Method, string]> = [
       ["get", "/api/bookings/xyz"],
       ["put", "/api/bookings/xyz"],
       ["delete", "/api/bookings/xyz"],

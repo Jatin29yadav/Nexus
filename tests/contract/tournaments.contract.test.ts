@@ -1,5 +1,5 @@
 // Contract: docs/API_CONTRACT.md §1.4 Tournaments.
-const {
+import {
   api,
   makeUser,
   makeAdmin,
@@ -7,7 +7,7 @@ const {
   players,
   newId,
   models,
-} = require("../setup/helpers");
+} from "../setup/helpers";
 
 const TOURNAMENT_KEYS = [
   "__v",
@@ -55,7 +55,7 @@ describe("GET /api/tournaments", () => {
 
     const res = await api().get("/api/tournaments");
 
-    expect(res.body.tournaments.map((t) => t.title)).toEqual(["Sooner", "Later"]);
+    expect(res.body.tournaments.map((t: { title: string }) => t.title)).toEqual(["Sooner", "Later"]);
     expect(Object.keys(res.body.tournaments[0]).sort()).toEqual(TOURNAMENT_KEYS);
     expect(res.body.tournaments[0]).toMatchObject({
       prize: "TBD",
@@ -358,7 +358,7 @@ describe("PUT /api/tournaments/:tournamentId/team/:teamId/status", () => {
         { teamName: "Night Owls", captain: captain.user._id, players: players(5) },
       ],
     });
-    return { t, teamId: t.registeredTeams[0]._id.toString() };
+    return { t, teamId: t.registeredTeams[0]!._id.toString() };
   }
 
   it("401 / 403: needs an admin", async () => {
@@ -419,7 +419,7 @@ describe("PUT /api/tournaments/:tournamentId/team/:teamId/status", () => {
       message: "Squad rejected and removed from roster.",
       action: "deleted",
     });
-    expect((await models.Tournament.findById(t._id)).registeredTeams).toHaveLength(0);
+    expect((await models.Tournament.findById(t._id))!.registeredTeams).toHaveLength(0);
   });
 
   it("400: unknown status value (SEC-21)", async () => {

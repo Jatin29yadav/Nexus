@@ -1,10 +1,14 @@
-// SEC-14 and the CORS contract. The origin list is built when app.js is first
-// loaded, so this file sets NODE_ENV before requiring it.
-process.env.NODE_ENV = "production";
+// SEC-14 and the CORS contract. The origin list is built when app.ts is first
+// loaded, so this file sets NODE_ENV before importing it. vi.hoisted runs
+// before the imports below.
+vi.hoisted(() => {
+  process.env.NODE_ENV = "production";
+});
 
-const { api, makeUser } = require("../setup/helpers");
+import { api, makeUser, firstCookie } from "../setup/helpers";
+import { parseOrigins } from "../../src/config/origins";
 
-const preflight = (origin) =>
+const preflight = (origin: string) =>
   api()
     .options("/api/bookings")
     .set("Origin", origin)
@@ -38,7 +42,6 @@ describe("CORS", () => {
   });
 
   describe("SEC-14: origin list parsing (config/origins.js)", () => {
-    const { parseOrigins } = require("../../src/config/origins");
 
     it("accepts a comma-separated FRONTEND_URL and tidies each entry", () => {
       expect(
@@ -78,7 +81,7 @@ describe("SEC-13 auth cookie in production", () => {
   const loginCookie = async () => {
     const { user, password } = await makeUser();
     const res = await api().post("/api/users/login").send({ email: user.email, password });
-    return res.headers["set-cookie"][0];
+    return firstCookie(res);
   };
 
   it("defaults to HttpOnly; Secure; SameSite=None (cross-site frontend)", async () => {
@@ -105,6 +108,6 @@ describe("SEC-13 auth cookie in production", () => {
 
   it("the logout cookie is Secure too, so the browser actually clears it", async () => {
     const res = await api().post("/api/users/logout");
-    expect(res.headers["set-cookie"][0]).toMatch(/^token=;.*Secure/i);
+    expect(firstCookie(res)).toMatch(/^token=;.*Secure/i);
   });
 });

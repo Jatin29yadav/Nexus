@@ -1,8 +1,7 @@
 // Contract: docs/API_CONTRACT.md §1.1 Users. Locks CURRENT behaviour.
-const { api, makeUser, models, PASSWORD } = require("../setup/helpers");
+import { api, makeUser, models, PASSWORD, cookiesOf } from "../setup/helpers";
 
-const keys = (o) => Object.keys(o).sort();
-const cookiesOf = (res) => res.headers["set-cookie"] || [];
+const keys = (o: object) => Object.keys(o).sort();
 
 describe("POST /api/users/register", () => {
   const body = {
@@ -29,7 +28,7 @@ describe("POST /api/users/register", () => {
 
   it("stores a bcrypt hash, never the plain password, and defaults role to User", async () => {
     await api().post("/api/users/register").send({ ...body, role: "Admin" });
-    const saved = await models.User.findOne({ email: body.email }).select("+password");
+    const saved = (await models.User.findOne({ email: body.email }).select("+password"))!;
 
     expect(saved.password).not.toBe(PASSWORD);
     expect(saved.password).toMatch(/^\$2[aby]\$10\$/);

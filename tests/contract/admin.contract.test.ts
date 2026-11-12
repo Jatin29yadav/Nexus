@@ -1,5 +1,5 @@
 // Contract: docs/API_CONTRACT.md §1.6 Admin and §1.7 fallback.
-const {
+import {
   api,
   makeUser,
   makeAdmin,
@@ -8,7 +8,7 @@ const {
   bookingPayload,
   newId,
   models,
-} = require("../setup/helpers");
+} from "../setup/helpers";
 
 describe("GET /api/admin/dashboard", () => {
   it("401 / 403: needs an admin", async () => {
@@ -54,7 +54,7 @@ describe("GET /api/admin/dashboard", () => {
 
 describe("PUT /api/admin/station/:stationId", () => {
   it("401 / 403: needs an admin", async () => {
-    const [station] = await seedStations(["PC-01"]);
+    const station = (await seedStations(["PC-01"]))[0]!;
     const { cookie } = await makeUser();
     const url = `/api/admin/station/${station._id}`;
     expect((await api().put(url).send({ status: "Maintenance" })).status).toBe(401);
@@ -62,7 +62,7 @@ describe("PUT /api/admin/station/:stationId", () => {
   });
 
   it("200: updates by Mongo _id", async () => {
-    const [station] = await seedStations(["PC-01"]);
+    const station = (await seedStations(["PC-01"]))[0]!;
     const { cookie } = await makeAdmin();
     const res = await api()
       .put(`/api/admin/station/${station._id}`)
@@ -85,7 +85,7 @@ describe("PUT /api/admin/station/:stationId", () => {
   });
 
   it("400: the human stationId ('PC-01') or a bad status (SEC-21)", async () => {
-    const [station] = await seedStations(["PC-01"]);
+    const station = (await seedStations(["PC-01"]))[0]!;
     const { cookie } = await makeAdmin();
 
     const byHumanId = await api()
@@ -101,7 +101,7 @@ describe("PUT /api/admin/station/:stationId", () => {
     expect(byHumanId.body).toEqual({ success: false, message: "Invalid id." });
     expect(badStatus.status).toBe(400);
     expect(badStatus.body).toEqual({ success: false, message: "Invalid station status" });
-    expect((await models.Station.findById(station._id)).status).toBe("Available");
+    expect((await models.Station.findById(station._id))!.status).toBe("Available");
   });
 });
 
@@ -131,7 +131,7 @@ describe("PUT /api/admin/booking/:bookingId/cancel", () => {
       success: true,
       message: "Admin forcefully cancelled the booking. Units are now free.",
     });
-    expect((await models.Booking.findById(id)).status).toBe("Cancelled");
+    expect((await models.Booking.findById(id))!.status).toBe("Cancelled");
     const station = await models.Station.findOne({ stationId: "PC-01" }).lean();
     expect(station).toMatchObject({ status: "Available", assignedUser: null, activeBooking: null });
   });

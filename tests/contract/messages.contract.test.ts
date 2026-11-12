@@ -1,5 +1,5 @@
 // Contract: docs/API_CONTRACT.md §1.5 Messages.
-const { api, makeUser, makeAdmin, makeMessage, newId, models } = require("../setup/helpers");
+import { api, makeUser, makeAdmin, makeMessage, newId, models } from "../setup/helpers";
 
 // Exactly what nexus-frontend/src/pages/Contact.jsx sends.
 const body = {
@@ -15,19 +15,19 @@ describe("POST /api/messages", () => {
 
     expect(res.status).toBe(201);
     expect(res.body).toEqual({ success: true, message: "Transmission sent successfully!" });
-    const saved = await models.Message.findOne().lean();
+    const saved = (await models.Message.findOne().lean())!;
     expect(saved).toMatchObject({ ...body, status: "Unread" });
   });
 
   it("201: subject defaults to 'No Subject'; phone is optional", async () => {
     const { subject, ...withoutSubject } = body;
     await api().post("/api/messages").send({ ...withoutSubject, phone: "9000000000" });
-    const saved = await models.Message.findOne().lean();
+    const saved = (await models.Message.findOne().lean())!;
     expect(saved.subject).toBe("No Subject");
     expect(saved.phone).toBe("9000000000");
   });
 
-  it.each(["name", "email", "message"])("400: %s missing", async (field) => {
+  it.each(["name", "email", "message"] as const)("400: %s missing", async (field) => {
     const { [field]: _omit, ...partial } = body;
     const res = await api().post("/api/messages").send(partial);
 
@@ -55,7 +55,7 @@ describe("GET /api/messages", () => {
 
     expect(res.status).toBe(200);
     expect(Object.keys(res.body).sort()).toEqual(["messages", "success"]);
-    expect(res.body.messages.map((m) => m.subject)).toEqual(["New", "Old"]);
+    expect(res.body.messages.map((m: { subject: string }) => m.subject)).toEqual(["New", "Old"]);
     expect(Object.keys(res.body.messages[0]).sort()).toEqual([
       "__v",
       "_id",

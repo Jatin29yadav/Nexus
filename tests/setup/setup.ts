@@ -1,15 +1,18 @@
 // Runs in every test file before the app is loaded.
-// TEMPORARY (TypeScript migration): the JS tests load src/ through Node's own
-// require(), which cannot read .ts files. tsx's hook teaches it to.
-if (!globalThis.__nexusTsxRegistered) {
-  require("tsx/cjs/api").register();
-  globalThis.__nexusTsxRegistered = true;
-}
-const path = require("path");
-const mongoose = require("mongoose");
+import path from "node:path";
+import dotenv from "dotenv";
+import mongoose from "mongoose";
+// These modules read no environment variables when loaded; the app (which
+// does) is only imported by the test files, after this file has run.
+import { User } from "../../src/models/User";
+import { Booking } from "../../src/models/Booking";
+import { Station } from "../../src/models/Station";
+import { Tournament } from "../../src/models/Tournament";
+import { Message } from "../../src/models/Message";
+import { resetAll } from "../../src/config/rateLimits";
 
 // Rule: tests use .env.test only. Values are loaded, never printed.
-require("dotenv").config({
+dotenv.config({
   path: path.resolve(__dirname, "../../.env.test"),
   quiet: true,
 });
@@ -31,8 +34,8 @@ if (!process.env.JWT_SECRET) {
 beforeAll(async () => {
   await mongoose.connect(memoryUri, { dbName: `nexus_test_${process.pid}` });
   // Load every model and build its indexes (unique email, username, stationId).
-  for (const name of ["User", "Booking", "Station", "Tournament", "Message"]) {
-    await require(`../../src/models/${name}`)[name].init();
+  for (const model of [User, Booking, Station, Tournament, Message]) {
+    await model.init();
   }
 });
 
@@ -40,7 +43,7 @@ beforeEach(async () => {
   const { collections } = mongoose.connection;
   await Promise.all(Object.values(collections).map((c) => c.deleteMany({})));
   // Rate-limit counters are per process; every test starts from zero.
-  await require("../../src/config/rateLimits").resetAll();
+  await resetAll();
 });
 
 afterAll(async () => {
