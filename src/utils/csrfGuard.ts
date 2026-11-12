@@ -6,11 +6,12 @@
 //    cannot be used for CSRF, since they have no victim cookie.)
 // 2. A body must be JSON. HTML forms can only send urlencoded, multipart or
 //    text/plain without a CORS preflight, so this closes the form vector too.
-const { allowedOrigins } = require("../config/origins");
+import type { RequestHandler } from "express";
+import { allowedOrigins } from "../config/origins";
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
-module.exports = (req, res, next) => {
+export const csrfGuard: RequestHandler = (req, res, next) => {
   if (SAFE_METHODS.has(req.method)) return next();
 
   const origin = req.get("Origin");

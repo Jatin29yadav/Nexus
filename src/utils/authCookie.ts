@@ -1,8 +1,19 @@
 // SEC-13: one definition of the auth cookie, used by login, register and logout.
-const { signAuthToken, TOKEN_TTL_SECONDS } = require("./authToken");
+import type { CookieOptions, Response } from "express";
+import type { Types } from "mongoose";
+import { signAuthToken, TOKEN_TTL_SECONDS } from "./authToken";
 
-const COOKIE_NAME = "token";
-const SAME_SITE_VALUES = ["lax", "strict", "none"];
+export const COOKIE_NAME = "token";
+
+type SameSite = "lax" | "strict" | "none";
+const SAME_SITE_VALUES: readonly string[] = ["lax", "strict", "none"] satisfies SameSite[];
+const isSameSite = (value: string): value is SameSite => SAME_SITE_VALUES.includes(value);
+
+/** The parts of a user the cookie needs. */
+export interface CookieUser {
+  _id: Types.ObjectId;
+  tokenVersion?: number | null;
+}
 
 // SameSite:
 //   production  → "none" (frontend on Vercel and API on Render are different
@@ -11,14 +22,10 @@ const SAME_SITE_VALUES = ["lax", "strict", "none"];
 //   elsewhere   → "lax" (localhost:5173 → localhost:3005 is same-site).
 // Secure: always in production, and whenever SameSite=None, because browsers
 // reject SameSite=None cookies that are not Secure.
-const cookieOptions = () => {
+export const cookieOptions = (): CookieOptions & { sameSite: SameSite } => {
   const isProduction = process.env.NODE_ENV === "production";
   const requested = (process.env.COOKIE_SAMESITE || "").toLowerCase();
-  const sameSite = SAME_SITE_VALUES.includes(requested)
-    ? requested
-    : isProduction
-      ? "none"
-      : "lax";
+  const sameSite: SameSite = isSameSite(requested) ? requested : isProduction ? "none" : "lax";
 
   return {
     httpOnly: true,
@@ -29,7 +36,7 @@ const cookieOptions = () => {
 };
 
 // The cookie lives exactly as long as the JWT inside it.
-const setAuthCookie = (res, user) => {
+export const setAuthCookie = (res: Response, user: CookieUser): void => {
   res.cookie(COOKIE_NAME, signAuthToken(user._id, user.tokenVersion || 0), {
     ...cookieOptions(),
     maxAge: TOKEN_TTL_SECONDS * 1000,
@@ -37,8 +44,6 @@ const setAuthCookie = (res, user) => {
 };
 
 // Same attributes as when it was set, otherwise browsers keep the old cookie.
-const clearAuthCookie = (res) => {
+export const clearAuthCookie = (res: Response): void => {
   res.cookie(COOKIE_NAME, "", { ...cookieOptions(), expires: new Date(0) });
 };
-
-module.exports = { setAuthCookie, clearAuthCookie, cookieOptions, COOKIE_NAME };

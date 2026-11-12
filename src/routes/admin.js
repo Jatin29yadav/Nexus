@@ -6,8 +6,8 @@ const {
   adminCancelBooking,
 } = require("../controllers/admin");
 const { isLoggedIn, isAdmin } = require("../middleware");
-const validate = require("../utils/validate");
-const validateObjectId = require("../utils/validateObjectId");
+const { validate } = require("../utils/validate");
+const { validateObjectId } = require("../utils/validateObjectId");
 const { stationStatusSchema } = require("../validations/zodSchemas");
 
 router.param("stationId", validateObjectId);

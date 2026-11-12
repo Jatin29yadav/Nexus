@@ -10,8 +10,8 @@ const {
   deleteTournament,
 } = require("../controllers/tournament");
 const { isLoggedIn, isAdmin, optionalAuth } = require("../middleware");
-const validate = require("../utils/validate");
-const validateObjectId = require("../utils/validateObjectId");
+const { validate } = require("../utils/validate");
+const { validateObjectId } = require("../utils/validateObjectId");
 const {
   createTournamentSchema,
   updateTournamentSchema,

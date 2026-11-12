@@ -5,12 +5,12 @@ const cors = require("cors");
 const helmet = require("helmet");
 const cookieParser = require("cookie-parser");
 const mongoose = require("mongoose");
-const rejectOperators = require("./utils/rejectOperators.js");
-const csrfGuard = require("./utils/csrfGuard.js");
-const errorHandler = require("./utils/errorHandler.js");
+const { rejectOperators } = require("./utils/rejectOperators");
+const { csrfGuard } = require("./utils/csrfGuard");
+const { errorHandler } = require("./utils/errorHandler");
 const { allowedOrigins } = require("./config/origins.js");
 const { apiLimiter } = require("./config/rateLimits.js");
-const ExpressError = require("./utils/expressError.js");
+const { ExpressError } = require("./utils/expressError");
 
 const userRouter = require("./routes/user.js");
 const messageRoutes = require("./routes/message.js");

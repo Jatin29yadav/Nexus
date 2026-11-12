@@ -8,8 +8,8 @@ const {
   cancelBooking,
 } = require("../controllers/booking");
 const { isLoggedIn } = require("../middleware");
-const validate = require("../utils/validate");
-const validateObjectId = require("../utils/validateObjectId");
+const { validate } = require("../utils/validate");
+const { validateObjectId } = require("../utils/validateObjectId");
 const { bookingSchema, updateBookingSchema } = require("../validations/zodSchemas");
 
 router.use(isLoggedIn);

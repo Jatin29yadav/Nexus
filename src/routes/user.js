@@ -3,7 +3,7 @@ const router = express.Router();
 const userController = require("../controllers/user");
 const { getUserProfile, toggleWishlist } = require("../controllers/user");
 const { isLoggedIn } = require("../middleware");
-const validate = require("../utils/validate");
+const { validate } = require("../utils/validate");
 const { loginLimiter, registerLimiter } = require("../config/rateLimits");
 const {
   loginSchema,

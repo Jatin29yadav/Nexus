@@ -3,8 +3,8 @@
 // the last two routes that took unvalidated input.
 const mongoose = require("mongoose");
 const { api, makeUser, makeAdmin, makeBooking, makeMessage, models, allSources } = require("../setup/helpers");
-const errorHandler = require("../../src/utils/errorHandler");
-const ExpressError = require("../../src/utils/expressError");
+const { errorHandler } = require("../../src/utils/errorHandler");
+const { ExpressError } = require("../../src/utils/expressError");
 
 describe("GET /health and /api/health", () => {
   it.each(["/health", "/api/health"])("%s answers 200 without auth while the database is up", async (url) => {
