@@ -33,7 +33,7 @@ export const errorHandler: ErrorRequestHandler = (err: unknown, req, res, next) 
   }
 
   if (code >= 500) {
-    console.error(`[${req.method} ${req.originalUrl}]`, err);
+    console.error("[%s %s]", req.method, req.originalUrl, err);
   }
 
   res.status(code).json({ success: false, message });
