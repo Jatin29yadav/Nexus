@@ -33,13 +33,18 @@ JWT_SECRET=your_jwt_secret
 ```
 
 ### Run the Server
+The backend is TypeScript (`src/`), compiled to `dist/`.
 ```bash
-# Development mode (with nodemon if configured)
+# Development mode (tsx restarts on change, no build needed)
 npm run dev
 
-# Production mode
+# Production mode: compile, then run the compiled server
+npm run build
 npm start
 ```
+
+On Render: build command `npm ci --include=dev && npm run build`, start command `npm start`.
+(`--include=dev` because TypeScript is a devDependency and npm skips those when `NODE_ENV=production`.)
 
 ---
 
@@ -59,7 +64,7 @@ npm install
 ### Configure Environment Variables
 Create a `.env` file in the root of the frontend directory.
 ```env
-VITE_API_URL=http://localhost:3005/api
+VITE_API_BASE_URL=http://localhost:3005/api
 ```
 
 ### Run the Client

@@ -1,0 +1,10 @@
+{
+  // Type-checks the tests together with src/. Never emits.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "..",
+    "noEmit": true,
+    "types": ["node", "vitest/globals"]
+  },
+  "include": ["../src", "."]
+}

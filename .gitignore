@@ -1,10 +1,9 @@
 # 🚨 SECRETS & ENVIRONMENT VARIABLES
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# Every env file is ignored (.env, .env.test, .env.local, ...).
+# Only the value-free template is committed.
+.env*
 *.env
+!.env.example
 
 # 📦 DEPENDENCIES
 node_modules/

@@ -1,0 +1,90 @@
+// Sample users for LOCAL DEVELOPMENT only. No passwords live in this file
+// (SEC-15): init/index.ts assigns one at seed time.
+import type { IUser } from "../types/domain";
+
+export type SampleUser = Pick<IUser, "username" | "phone" | "email" | "role" | "wishlist" | "bookings">;
+
+const sampleUsers: SampleUser[] = [
+  {
+    username: "gamerpro99",
+    phone: "9876543210",
+    email: "gamerpro99@example.com",
+    role: "User",
+    wishlist: ["PC-12", "C-05"],
+    bookings: [],
+  },
+  {
+    username: "shadowhunter",
+    phone: "9123456780",
+    email: "shadowhunter@example.com",
+    role: "User",
+    wishlist: ["PC-01"],
+    bookings: [],
+  },
+  {
+    username: "pixelqueen",
+    phone: "9988776655",
+    email: "pixelqueen@example.com",
+    role: "User",
+    wishlist: ["C-01", "C-02"],
+    bookings: [],
+  },
+  {
+    username: "noobmaster69",
+    phone: "9090909090",
+    email: "noobmaster69@example.com",
+    role: "User",
+    wishlist: [],
+    bookings: [],
+  },
+  {
+    username: "cyberknight",
+    phone: "8800554433",
+    email: "cyberknight@example.com",
+    role: "User",
+    wishlist: ["PC-50", "PC-49"],
+    bookings: [],
+  },
+  {
+    username: "vr_addict",
+    phone: "7001234567",
+    email: "vraddict@example.com",
+    role: "User",
+    wishlist: ["C-10"],
+    bookings: [],
+  },
+  {
+    username: "esportslegend",
+    phone: "8123456789",
+    email: "esportslegend@example.com",
+    role: "User",
+    wishlist: ["PC-25", "PC-26"],
+    bookings: [],
+  },
+  {
+    username: "arcadehero",
+    phone: "9776655443",
+    email: "arcadehero@example.com",
+    role: "User",
+    wishlist: [],
+    bookings: [],
+  },
+  {
+    username: "consoleking",
+    phone: "9556677880",
+    email: "consoleking@example.com",
+    role: "User",
+    wishlist: ["C-07", "C-08"],
+    bookings: [],
+  },
+  {
+    username: "nexusadmin",
+    phone: "9001122334",
+    email: "admin@nexusgaming.com",
+    role: "Admin",
+    wishlist: [],
+    bookings: [],
+  },
+];
+
+export const data = sampleUsers;
