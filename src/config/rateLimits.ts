@@ -54,3 +54,10 @@ export const contactLimiter = limiter({
 
 // Tests only: start every test with empty counters.
 export const resetAll = (): Promise<void[]> => Promise.all(stores.map((store) => store.resetAll()));
+
+// Live chat tickets: one per (re)connect; generous for flaky mobile networks.
+export const chatTicketLimiter = limiter({
+  windowMs: 15 * MINUTE,
+  limit: 60,
+  message: "Too many chat connections. Please try again shortly.",
+});

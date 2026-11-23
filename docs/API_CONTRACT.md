@@ -254,6 +254,67 @@ Message = { _id, name, email, phone?, subject: string (default "No Subject"), me
 ### 1.7 Fallback
 - Any other path: 404 `{ success: false, message: "API Endpoint Not Found!" }` (`Nexus/src/app.ts`)
 
+### 1.8 Live chat (ML-016) — `Nexus/src/routes/chat.ts`, `Nexus/src/controllers/chat.ts`, `Nexus/src/realtime/`
+
+Real-time rooms over **Socket.IO 4**, namespace **`/chat`**, on the same HTTP server and port as the REST API (path `/socket.io/`). The default namespace `/` refuses every connection (`"Use the /chat namespace."`). History lives in MongoDB (`ChatRoom`, `ChatMessage`). The recent history, presence and the room list are cached in process (`src/realtime/cache.ts`), which suits one instance.
+
+```
+ChatRoom    = { _id, slug, name, type: "lobby" | "tournament" | "announcements", tournament: string | null, readOnly: boolean }
+ChatMessage = { _id, room, user, username, text, createdAt }       // ids and dates as strings
+Presence    = { roomId, count, users: { _id, username }[] }        // users capped at 100
+```
+
+**Rooms.** `general` (lobby) and `announcements` (`readOnly`: only admins post) always exist. Every tournament whose status is `Upcoming`, `Registration Open` or `Live` gets a `tournament` room (`slug` `tournament-<id>`, `name` = title). Rooms are created on first listing, and the list is cached for 5 minutes. Creating, updating or deleting a tournament through the API clears that cache. Rooms of finished tournaments still exist and can be joined by id, but they are not listed.
+
+**Connecting.**
+1. `POST /api/chat/ticket` (cookie session) → `ticket`.
+2. `io(<API origin> + "/chat", { auth: { ticket } })`. Pass `auth` as a function that fetches a fresh ticket, because tickets expire after 60 s and every reconnect needs a new one. No cookies are used on the socket.
+3. Handshake errors (`connect_error`, `err.message`): `"Invalid or expired ticket."` (missing, expired, forged, wrong purpose, user deleted, or revoked by logout through `tokenVersion`) and `"Origin not allowed."` (a browser `Origin` that is not on the `FRONTEND_URL` allow-list; a missing `Origin` passes, as on REST).
+4. Logout (`POST /api/users/logout`) disconnects every live socket of that user (`"io server disconnect"`).
+
+**Client → server events.** Each answers through its ack with the REST envelope. Payloads are strict objects: unknown keys, `$` operators and non-string ids are refused with `{ success: false, message }`. A frame over **4 kB** closes the connection.
+
+| Event | Payload | Ack on success | Errors (`message`) |
+|---|---|---|---|
+| `room:join` | `{ roomId }` | `{ success, room: ChatRoom, history: ChatMessage[] (last 50, oldest first), presence: Presence }` | `"Invalid id."`, `"Room not found."`, `"Could not join the room."` |
+| `room:leave` | `{ roomId }` | `{ success }` | `"Invalid id."` |
+| `message:send` | `{ roomId, text (trimmed, 1–500), clientId (1–64 of A–Z a–z 0–9 _ -) }` | `{ success, chatMessage: ChatMessage, duplicate: boolean }` | `"Join the room first."`, `"Message cannot be empty"`, `"Message must be at most 500 characters"`, `"Slow down! You are sending messages too fast."` (per user, all tabs: burst 10, then 1 per second), `"Only admins can post in this room."`, `"You are muted in chat."` (+ `mutedUntil`), `"Session expired. Please sign in again."` (then disconnected), `"Message could not be sent."` |
+| `typing` | `{ roomId }` | no ack; ignored unless joined; at most one per 2 s per room | — |
+
+`clientId` makes a send idempotent. Resending the same `clientId` (for example after a reconnect) acks the stored message with `duplicate: true` and does not broadcast it again. Text is stored and sent as plain text, and clients must render it as text, never as HTML.
+
+**Server → client events.**
+
+| Event | Payload | When |
+|---|---|---|
+| `message:new` | `ChatMessage` | a message was stored in a room you joined (the sender gets it too) |
+| `message:deleted` | `{ roomId, id }` | a message was deleted (see DELETE below) |
+| `presence` | `Presence` | someone joined, left or disconnected; at most one per room per second |
+| `typing` | `{ roomId, userId, username }` | another member is typing |
+
+#### `POST /api/chat/ticket` — User
+- **Body:** none
+- **200:** `{ success, ticket: string, expiresIn: 60 }`, `Cache-Control: no-store`. The ticket is a JWT `{ userId, tv, purpose: "chat" }` signed like the session token. It is **not** accepted as the `token` cookie, and a session token is not accepted as a ticket.
+- **Errors:** 401; 429 `"Too many chat connections. Please try again shortly."` (60 per 15 min per IP); 500 `"Could not start chat."`
+
+#### `GET /api/chat/rooms` — Public
+- **200:** `{ success, rooms: ChatRoom[] }`: `general`, `announcements`, then open tournaments
+- **Errors:** 500 `"Error fetching chat rooms"`
+
+#### `GET /api/chat/rooms/:roomId/messages?before=<messageId>&limit=<1–100, default 50>` — User
+- **200:** `{ success, messages: ChatMessage[] (oldest first), hasMore: boolean }`. These are the newest messages older than `before` (or the newest overall). Pass the first message's `_id` as the next `before`. Deleted messages are left out.
+- **Errors:** 401; 400 `"Invalid id."` / limit message; 404 `"Room not found."`; 500 `"Error fetching messages"`
+
+#### `DELETE /api/chat/messages/:messageId` — User (author within 5 minutes) or Admin (any)
+- Soft delete: sets `deletedAt` and `deletedBy`, drops the message from history and broadcasts `message:deleted`.
+- **200:** `{ success, message: "Message deleted." }`
+- **Errors:** 401; 400 `"Invalid id."`; 403 `"You can only delete your own message within 5 minutes."`; 404 `"Message not found."` (also when already deleted); 500 `"Error deleting message"`
+
+#### `PUT /api/chat/users/:userId/mute` — Admin
+- **Body:** `{ minutes: integer 0–10080 }`. `0` lifts the mute; the longest mute is 7 days.
+- **200:** `{ success, message: "User muted." | "User unmuted.", mutedUntil: ISO string | null }`. This sets `User.chatMutedUntil`, which is never returned by other endpoints.
+- **Errors:** 401/403; 400 field message; 404 `"User not found."`; 500 `"Error updating mute"`
+
 ---
 
 ## 2. Frontend API calls

@@ -177,3 +177,41 @@ export const wishlistSchema = z.object({
     .min(1, "Station ID is required")
     .regex(/^[A-Za-z0-9-]{1,10}$/, "Invalid station id"),
 });
+
+// ── Live chat ───────────────────────────────────────────────────────────
+// Socket.IO payloads go through these exactly like REST bodies do. Objects
+// are strict: an unknown key (including "$..." operators) is a bad request.
+const objectId = z.string("Invalid id.").regex(/^[a-f0-9]{24}$/i, "Invalid id.");
+
+export const chatRoomEventSchema = z.strictObject({ roomId: objectId });
+
+export const chatSendSchema = z.strictObject({
+  roomId: objectId,
+  text: z
+    .string("Message text is required")
+    .trim()
+    .min(1, "Message cannot be empty")
+    .max(500, "Message must be at most 500 characters"),
+  clientId: z
+    .string("clientId is required")
+    .regex(/^[A-Za-z0-9_-]{1,64}$/, "clientId must be 1-64 letters, numbers, _ or -"),
+});
+
+export const chatHistoryQuerySchema = z.object({
+  before: objectId.optional(),
+  limit: z.coerce
+    .number("limit must be a number")
+    .int("limit must be a whole number")
+    .min(1, "limit must be between 1 and 100")
+    .max(100, "limit must be between 1 and 100")
+    .default(50),
+});
+
+// 0 lifts a mute; the longest mute is 7 days.
+export const chatMuteSchema = z.object({
+  minutes: z
+    .number("minutes is required")
+    .int("minutes must be a whole number")
+    .min(0, "minutes must be between 0 and 10080")
+    .max(10080, "minutes must be between 0 and 10080"),
+});

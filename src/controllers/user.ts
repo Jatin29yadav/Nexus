@@ -4,6 +4,7 @@ import { signAuthToken } from "../utils/authToken";
 import { setAuthCookie, clearAuthCookie } from "../utils/authCookie";
 import { currentUser, tokenCookie, userForToken } from "../middleware";
 import { isRecord, messageOf } from "../utils/narrow";
+import { disconnectUser } from "../realtime/hub";
 import type { ApiHandler, ParamsDictionary } from "../types/api";
 import type { LoginBody, RegisterBody, WishlistBody } from "../types/requests";
 
@@ -121,6 +122,7 @@ export const logoutUser: ApiHandler = async (req, res) => {
     const user = token ? await userForToken(token) : null;
     if (user) {
       await User.updateOne({ _id: user._id }, { $inc: { tokenVersion: 1 } });
+      disconnectUser(user._id.toString()); // live chat sockets end with the session
     }
   } catch {
     // Invalid, expired or already revoked token: nothing left to revoke.

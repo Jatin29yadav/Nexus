@@ -17,6 +17,7 @@ import { tournamentRouter } from "./routes/tournament";
 import { bookingRouter } from "./routes/booking";
 import { adminRouter } from "./routes/admin";
 import { stationRouter } from "./routes/station";
+import { chatRouter } from "./routes/chat";
 
 export const app = express();
 
@@ -79,6 +80,7 @@ app.use("/api/messages", messageRouter);
 app.use("/api/bookings", bookingRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/stations", stationRouter);
+app.use("/api/chat", chatRouter);
 
 app.use((req, res, next) => {
   next(new ExpressError(404, "API Endpoint Not Found!"));

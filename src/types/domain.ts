@@ -16,6 +16,7 @@ export type TournamentStatus =
   | "Completed"
   | "Cancelled";
 export type MessageStatus = "Unread" | "Read";
+export type ChatRoomType = "lobby" | "tournament" | "announcements";
 
 interface Timestamps {
   createdAt: Date;
@@ -35,6 +36,8 @@ export interface IUser extends Timestamps {
   wishlist: string[];
   /** Never written to today (see CLAUDE.md, known gaps). */
   bookings: Types.ObjectId[];
+  /** Live chat: the user cannot post until this time. Not selected by default. */
+  chatMutedUntil?: Date | null;
 }
 
 export interface IUserMethods {
@@ -103,6 +106,30 @@ export interface IMessage {
   message: string;
   status: MessageStatus;
   createdAt: Date;
+}
+
+export interface IChatRoom extends Timestamps {
+  /** Stable key: "general", "announcements" or "tournament-<tournamentId>". */
+  slug: string;
+  name: string;
+  type: ChatRoomType;
+  /** Set for type "tournament" only. */
+  tournament: Types.ObjectId | null;
+  /** Only admins may post. */
+  readOnly: boolean;
+}
+
+export interface IChatMessage {
+  room: Types.ObjectId;
+  user: Types.ObjectId;
+  /** Copied at write time so history needs no populate. */
+  username: string;
+  text: string;
+  /** Client-chosen id that makes a resend after a reconnect idempotent. */
+  clientId: string;
+  createdAt: Date;
+  deletedAt: Date | null;
+  deletedBy: Types.ObjectId | null;
 }
 
 /** Legacy (unused) allocator model. */

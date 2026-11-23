@@ -9,7 +9,10 @@ import { Booking } from "../../src/models/Booking";
 import { Station } from "../../src/models/Station";
 import { Tournament } from "../../src/models/Tournament";
 import { Message } from "../../src/models/Message";
+import { ChatRoom } from "../../src/models/ChatRoom";
+import { ChatMessage } from "../../src/models/ChatMessage";
 import { resetAll } from "../../src/config/rateLimits";
+import { resetChatState } from "../../src/realtime/cache";
 
 // Rule: tests use .env.test only. Values are loaded, never printed.
 dotenv.config({
@@ -34,7 +37,7 @@ if (!process.env.JWT_SECRET) {
 beforeAll(async () => {
   await mongoose.connect(memoryUri, { dbName: `nexus_test_${process.pid}` });
   // Load every model and build its indexes (unique email, username, stationId).
-  for (const model of [User, Booking, Station, Tournament, Message]) {
+  for (const model of [User, Booking, Station, Tournament, Message, ChatRoom, ChatMessage]) {
     await model.init();
   }
 });
@@ -44,6 +47,7 @@ beforeEach(async () => {
   await Promise.all(Object.values(collections).map((c) => c.deleteMany({})));
   // Rate-limit counters are per process; every test starts from zero.
   await resetAll();
+  resetChatState();
 });
 
 afterAll(async () => {

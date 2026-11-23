@@ -48,6 +48,13 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
       select: false,
     },
 
+    // Live chat moderation: an admin mute lasts until this time.
+    chatMutedUntil: {
+      type: Date,
+      default: null,
+      select: false,
+    },
+
     // 2. Wishlist for storing favorite PCs (e.g., ["PC-05", "C-02"])
     wishlist: [
       {

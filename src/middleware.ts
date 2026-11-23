@@ -1,5 +1,5 @@
 import type { Request, RequestHandler } from "express";
-import { verifyAuthToken } from "./utils/authToken";
+import { verifyAuthToken, verifyChatTicket, type AuthTokenClaims } from "./utils/authToken";
 import { messageOf } from "./utils/narrow";
 import { User, type UserDocument } from "./models/User";
 
@@ -7,14 +7,20 @@ import { User, type UserDocument } from "./models/User";
 // Throws when the token is invalid, expired, or revoked: a token is only good
 // while its `tv` equals the user's current tokenVersion (SEC-09). Tokens
 // issued before tokenVersion existed carry no `tv` and count as version 0.
-export const userForToken = async (token: unknown): Promise<UserDocument | null> => {
-  const decoded = verifyAuthToken(token);
+const userForClaims = async (decoded: AuthTokenClaims): Promise<UserDocument | null> => {
   const user = await User.findById(decoded.userId).select("-password +tokenVersion");
   if (user && (decoded.tv || 0) !== (user.tokenVersion || 0)) {
     throw new Error("token revoked");
   }
   return user;
 };
+
+export const userForToken = (token: unknown): Promise<UserDocument | null> =>
+  userForClaims(verifyAuthToken(token));
+
+// Same revocation rule for a live chat ticket (utils/authToken.ts).
+export const userForChatTicket = (ticket: unknown): Promise<UserDocument | null> =>
+  userForClaims(verifyChatTicket(ticket));
 
 // The auth cookie as cookie-parser left it: usually a string, but a "j:"
 // cookie is parsed into an object. Anything that is not a string is refused

@@ -1,6 +1,7 @@
 import mongoose, { type Types } from "mongoose";
 import { Tournament, type TournamentDocument } from "../models/Tournament";
 import { currentUser } from "../middleware";
+import { invalidateRooms } from "../realtime/cache";
 import type { UserDocument } from "../models/User";
 import type { ITournament } from "../types/domain";
 import type { ApiHandler, ParamsDictionary } from "../types/api";
@@ -44,6 +45,7 @@ export const createTournament: ApiHandler<ParamsDictionary, CreateTournamentBody
     });
 
     await newTournament.save();
+    invalidateRooms(); // its chat room appears in the next room list
     return res.status(201).json({ success: true, tournament: newTournament });
   } catch {
     return res
@@ -228,6 +230,7 @@ export const deleteTournament: ApiHandler<TournamentParams> = async (req, res) =
         .status(404)
         .json({ success: false, message: "Tournament not found" });
     }
+    invalidateRooms();
 
     return res.status(200).json({
       success: true,
@@ -257,6 +260,7 @@ export const updateTournament: ApiHandler<TournamentParams, UpdateTournamentBody
         .status(404)
         .json({ success: false, message: "Tournament not found" });
     }
+    invalidateRooms(); // title/status change the chat room list
 
     return res.status(200).json({
       success: true,
