@@ -425,7 +425,7 @@ The frontend has **no separate logic layer yet**: apart from three files, logic 
 | `nexus-frontend/src/pages/admin/AdminUsers.jsx` | Hard-coded table (data array becomes logic only if an endpoint is added) |
 | `nexus-frontend/src/pages/admin/AdminSettings.jsx` | Static form |
 
-**Exception (ML-016, 2026-11-23):** `nexus-frontend/src/pages/Chat.tsx` was added after the freeze, with the freeze lifted for that page only. Its markup is defined by the `chat*` Playwright baselines; from now on it is frozen like the other pages.
+**Exception (ML-016, 2026-11-23):** `nexus-frontend/src/pages/Chat.tsx` was added after the freeze, with the freeze lifted for that page only (and for its "Chat" entry in `CircluarNav.tsx`). Its markup is defined by the `chat*` Playwright baselines; from now on it is frozen like the other pages.
 
 ### 4.2 Editable entirely (logic / config)
 
