@@ -35,7 +35,7 @@ jobs:
       # mongodb-memory-server downloads a MongoDB binary (~100 MB) on the first
       # run; caching it makes later runs much faster.
       - name: Cache MongoDB binary
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/mongodb-binaries
           key: mongodb-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
