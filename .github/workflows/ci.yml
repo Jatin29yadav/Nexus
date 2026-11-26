@@ -1,0 +1,79 @@
+name: CI / CD
+
+# CI runs on every pull request and on every push to main.
+# CD (deploy to Render) runs only on main, and only after CI passes.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# A new push to the same branch cancels the run that is still going.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: Typecheck, test, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # mongodb-memory-server downloads a MongoDB binary (~100 MB) on the first
+      # run; caching it makes later runs much faster.
+      - name: Cache MongoDB binary
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/mongodb-binaries
+          key: mongodb-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      # Tests use an in-memory MongoDB and set their own env vars,
+      # so no secrets are needed here.
+      - name: Test (with coverage)
+        run: npm run test:coverage
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 7
+
+  deploy:
+    name: Deploy to Render
+    needs: ci
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      # RENDER_DEPLOY_HOOK_URL: Render dashboard → service → Settings → Deploy Hook.
+      # Store it in GitHub → Settings → Secrets and variables → Actions.
+      - name: Trigger Render deploy
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "::error::RENDER_DEPLOY_HOOK_URL secret is not set"
+            exit 1
+          fi
+          curl --fail --silent --show-error -X POST "$HOOK"
